@@ -366,7 +366,7 @@ export default function Settings() {
             <ReadinessItem
               ok={healthState === "ok"}
               label="API Health"
-              detail={healthState === "ok" ? `Online. Uptime ${health?.uptime || 0}s.` : healthState === "loading" ? "Checking API health endpoint..." : "API health has not passed yet."}
+              detail={healthState === "ok" ? `Online. Uptime ${health?.uptime || 0}s.` : healthState === "loading" ? "Checking API health endpoint..." : (health?.error || "API health check failed. Check backend connection.")}
               icon={healthState === "ok" ? <FaCheckCircle /> : <FaExclamationCircle />}
             />
             <ReadinessItem

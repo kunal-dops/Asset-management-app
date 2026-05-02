@@ -10,6 +10,7 @@ import {
   FaChartBar,
   FaCog,
   FaLaptopCode,
+  FaRobot,
 } from "react-icons/fa";
 
 const Sidebar = () => {
@@ -62,6 +63,11 @@ const Sidebar = () => {
           <NavLink to="/reports" className="sidebar-link">
             <FaChartBar className="sidebar-icon" />
             <span>Reports & Analytics</span>
+          </NavLink>
+
+          <NavLink to="/ai-agent" className="sidebar-link">
+            <FaRobot className="sidebar-icon" />
+            <span>AI Troubleshooter</span>
           </NavLink>
 
           <NavLink to="/settings" className="sidebar-link">

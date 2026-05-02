@@ -18,6 +18,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const assetRoutes = require("./routes/assetRoutes");
 const assignmentRoutes = require("./routes/assignmentRoutes");
 const maintenanceRoutes = require("./routes/maintenanceRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use("/api/categories", authMiddleware, categoryRoutes);
 app.use("/api/assets", authMiddleware, assetRoutes);
 app.use("/api/assignments", authMiddleware, assignmentRoutes);
 app.use("/api/maintenance", authMiddleware, maintenanceRoutes);
+app.use("/api/ai", authMiddleware, aiRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: `Route ${req.method} ${req.path} not found`, requestId: req.requestId });

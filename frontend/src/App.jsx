@@ -11,6 +11,7 @@ import Assignments from "./pages/Assignments";
 import Maintenance from "./pages/Maintenance";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import AIAgent from "./pages/AIAgent";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -30,6 +31,7 @@ function App() {
           { path: "/assignments", element: <Assignments /> },
           { path: "/maintenance", element: <Maintenance /> },
           { path: "/reports", element: <Reports /> },
+          { path: "/ai-agent", element: <AIAgent /> },
           { path: "/settings", element: <Settings /> },
         ].map(({ path, element }) => (
           <Route

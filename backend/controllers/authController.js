@@ -48,8 +48,8 @@ exports.login = (req, res) => {
       });
     };
 
-    // Support both hashed passwords (bcrypt) and plain text (legacy/sample data)
-    if (user.password.startsWith("$2")) {
+    // Support both hashed passwords (bcrypt) and plain text (legacy)
+    if (user.password && (user.password.startsWith("$2a$") || user.password.startsWith("$2b$"))) {
       bcrypt.compare(password, user.password, (compareErr, isMatch) => {
         if (compareErr) {
           console.error("Password compare error:", compareErr);
@@ -58,6 +58,7 @@ exports.login = (req, res) => {
         finishLogin(isMatch);
       });
     } else {
+      // Fallback for legacy plain text passwords in the database
       finishLogin(password === user.password);
     }
   });

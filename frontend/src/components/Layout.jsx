@@ -1,5 +1,6 @@
 import React from "react";
 import Sidebar from "./Sidebar";
+import AIFloatingButton from "./AIFloatingButton";
 
 const Layout = ({ children }) => {
   return (
@@ -8,6 +9,7 @@ const Layout = ({ children }) => {
       <div className="main-content-pro">
         {children}
       </div>
+      <AIFloatingButton />
     </div>
   );
 };

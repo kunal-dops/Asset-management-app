@@ -157,7 +157,8 @@ const Maintenance = () => {
       });
       fetchAll();
     } catch (err) {
-      alert("Failed to resolve");
+      setFlash({ type: "error", text: "Failed to resolve request." });
+      setTimeout(() => setFlash(null), 4000);
     }
   };
 
@@ -166,7 +167,8 @@ const Maintenance = () => {
       await API.put(`/maintenance/${id}`, { status: "in_progress" });
       fetchAll();
     } catch (err) {
-      alert("Failed to update");
+      setFlash({ type: "error", text: "Failed to update status to In Progress." });
+      setTimeout(() => setFlash(null), 4000);
     }
   };
 
