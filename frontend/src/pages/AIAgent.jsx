@@ -290,7 +290,7 @@ export default function AIAgent() {
   }, [fetchWorkflowData]);
 
   useEffect(() => {
-    if (loadingData || requestPromptShown || activeRequests.length === 0 && requests.length === 0) return;
+    if (loadingData || requestPromptShown) return;
 
     if (activeRequests.length > 0) {
       const requestList = activeRequests

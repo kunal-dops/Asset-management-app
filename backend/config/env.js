@@ -13,7 +13,7 @@ function validateEnv() {
   const missing = REQUIRED_IN_PRODUCTION.filter((key) => !process.env[key]);
 
   if (isProduction && missing.length > 0) {
-    throw new Error(`Missing required production environment variables: ${missing.join(", ")}`);
+    throw new Error(`[Deployment Error] Missing required production environment variables: ${missing.join(", ")}. Please add these in your hosting provider's (e.g., Render/Railway) dashboard.`);
   }
 
   if (isProduction && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
