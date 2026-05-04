@@ -1,11 +1,11 @@
+const express = require("express");
 const cors = require("cors");
 
 app.use(cors({
   origin: process.env.CORS_ORIGIN,
   credentials: true
 }));
-const express = require("express");
-const cors = require("cors");
+app.use(express.json());
 require("dotenv").config();
 const db = require("./config/db");
 const { validateEnv } = require("./config/env");
