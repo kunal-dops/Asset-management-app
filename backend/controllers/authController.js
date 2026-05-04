@@ -14,25 +14,24 @@ exports.login = (req, res) => {
   }
 
   // Hardcoded Admin Access
-  if (email === "admin@example.com" && password === "123456") {
-    const token = jwt.sign(
-      { user_id: 0, role: "admin" },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
+if (email === "admin@example.com" && password === "Admin@123") {
+  const token = jwt.sign(
+    { user_id: 0, role: "admin" },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
 
-    return res.status(200).json({
-      message: "Login successful",
-      token,
-      user: {
-        user_id: 0,
-        full_name: "System Administrator",
-        email: "admin@example.com",
-        role: "admin"
-      },
-    });
-  }
-
+  return res.status(200).json({
+    message: "Login successful",
+    token,
+    user: {
+      user_id: 0,
+      full_name: "System Administrator",
+      email: "admin@example.com",
+      role: "admin"
+    },
+  });
+}
   const sql = "SELECT * FROM users WHERE email = ?";
   db.query(sql, [email], (err, result) => {
     if (err) {
