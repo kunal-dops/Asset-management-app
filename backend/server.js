@@ -1,12 +1,8 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 
-app.use(cors({
-  origin: process.env.CORS_ORIGIN,
-  credentials: true
-}));
-app.use(express.json());
-require("dotenv").config();
 const db = require("./config/db");
 const { validateEnv } = require("./config/env");
 
@@ -26,10 +22,13 @@ const assignmentRoutes = require("./routes/assignmentRoutes");
 const maintenanceRoutes = require("./routes/maintenanceRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 
+// ✅ FIRST create app
 const app = express();
 
+// ✅ Validate env
 validateEnv();
 
+// ✅ Security + logging
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(requestContext);
@@ -37,8 +36,9 @@ app.use(securityHeaders);
 app.use(requestLogger);
 app.use(createRateLimiter());
 
+// ✅ CORS (ONLY ONE place)
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
+  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
   : ["http://localhost:3000", "http://localhost:5173"];
 
 app.use(
@@ -54,11 +54,17 @@ app.use(
   })
 );
 
+// ✅ Body parsing
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
+// ✅ Health routes
 app.get("/", (req, res) => {
-  res.json({ status: "ok", message: "IT Asset Management API Running", requestId: req.requestId });
+  res.json({
+    status: "ok",
+    message: "IT Asset Management API Running",
+    requestId: req.requestId,
+  });
 });
 
 app.get("/api/health", (req, res) => {
@@ -71,6 +77,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// ✅ Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", authMiddleware, userRoutes);
 app.use("/api/categories", authMiddleware, categoryRoutes);
@@ -79,27 +86,37 @@ app.use("/api/assignments", authMiddleware, assignmentRoutes);
 app.use("/api/maintenance", authMiddleware, maintenanceRoutes);
 app.use("/api/ai", authMiddleware, aiRoutes);
 
+// ❌ 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: `Route ${req.method} ${req.path} not found`, requestId: req.requestId });
+  res.status(404).json({
+    error: `Route ${req.method} ${req.path} not found`,
+    requestId: req.requestId,
+  });
 });
 
+// ❌ Error handler
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
-  res.status(500).json({ error: "Internal server error", requestId: req.requestId });
+  res.status(500).json({
+    error: "Internal server error",
+    requestId: req.requestId,
+  });
 });
 
+// ✅ Start server
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
 
+// ✅ Graceful shutdown
 function shutdown(signal) {
   console.log(`${signal} received. Closing server...`);
   server.close(() => {
     db.end((err) => {
       if (err) {
-        console.error("Database pool shutdown failed:", err.message);
+        console.error("Database shutdown failed:", err.message);
         process.exit(1);
       }
       console.log("Server closed cleanly.");
