@@ -346,8 +346,8 @@ export default function AIAgent() {
     const lowerText = text.toLowerCase();
     // Try to find an asset where the name or tag is mentioned in the chat
     const found = assets.find(a => 
-      lowerText.includes(a.asset_tag?.toLowerCase()) || 
-      lowerText.includes(a.asset_name?.toLowerCase())
+      (a.asset_tag && lowerText.includes(a.asset_tag.toLowerCase())) || 
+      (a.asset_name && lowerText.includes(a.asset_name.toLowerCase()))
     );
     return found ? found.asset_id : null;
   };

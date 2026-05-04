@@ -256,26 +256,23 @@ const buildLocalAnswer = ({ message, context = {} }) => {
 const tryOpenAI = async ({ message, history, context }) => {
   if (!process.env.OPENAI_API_KEY || typeof fetch !== "function") return null;
 
-  const prompt = `
-You are an expert IT asset-management technician inside an AssetSphere Pro app.
+  const systemPrompt = `You are an expert IT asset-management technician inside an AssetSphere Pro app.
 Return ONLY valid JSON with these keys:
 category, severity, confidence, text, cause, solutionSteps, checks, followUpQuestion, nextAction, safetyNotes, scope, impact, estimatedTime, escalationPath, resolutionNote, quickReplies, matchedSignals, requestDraft.
 Rules:
-- solutionSteps must be direct fix steps a technician would try.
-- checks must be evidence to collect.
-- requestDraft must include request_type, priority, issue_description.
+- solutionSteps: direct fix steps.
+- checks: evidence to collect.
+- requestDraft: { request_type, priority, issue_description }.
 - Never request passwords.
-- confidence must be a number from 0 to 100.
-- resolutionNote must be a ready-to-paste service request note.
-- Suggest Service Desk creation/resolution when appropriate.
+- confidence: number 0-100.
+Context:
 User role: ${context.userRole || "user"}
 Assets loaded: ${context.assetCount || 0}
-Open requests: ${context.openRequestCount || 0}
-Recent chat: ${JSON.stringify(history || []).slice(0, 4000)}
-Problem: ${message}
-`;
+Open requests: ${context.openRequestCount || 0}`;
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const userPrompt = `Recent chat history: ${JSON.stringify(history || []).slice(0, 2000)}\n\nCurrent Problem: ${message}`;
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -283,18 +280,32 @@ Problem: ${message}
     },
     body: JSON.stringify({
       model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-      input: prompt,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
       temperature: 0.2,
+      response_format: { type: "json_object" }
     }),
   });
 
-  if (!response.ok) return null;
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("OpenAI API Error:", response.status, errText);
+    return null;
+  }
+
   const data = await response.json();
-  const output = data.output_text || data.output?.flatMap((item) => item.content || []).map((part) => part.text || "").join("");
+  const output = data.choices?.[0]?.message?.content;
   if (!output) return null;
 
-  const parsed = JSON.parse(output);
-  return { source: "openai", ...parsed };
+  try {
+    const parsed = JSON.parse(output);
+    return { source: "openai", ...parsed };
+  } catch (err) {
+    console.error("AI JSON Parse Error:", err);
+    return null;
+  }
 };
 
 router.post("/troubleshoot", async (req, res) => {
@@ -320,5 +331,17 @@ router.post("/troubleshoot", async (req, res) => {
     res.json(buildLocalAnswer({ message, context: safeContext }));
   }
 });
+
+// Export logic for unit tests
+router._internals = {
+  detectIssue,
+  inferScope,
+  inferImpact,
+  estimateTime,
+  buildResolutionNote,
+  buildEscalationPath,
+  makeTechnicianPlan,
+  buildLocalAnswer,
+};
 
 module.exports = router;
