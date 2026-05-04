@@ -3,16 +3,6 @@ import axios from "axios";
 const API = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
 });
-export default API;
-export const getApiErrorMessage = (err, fallback = "Something went wrong. Please try again.") => {
-  return (
-    err?.response?.data?.details ||
-    err?.response?.data?.message ||
-    err?.response?.data?.error ||
-    err?.message ||
-    fallback
-  );
-};
 
 // Attach token automatically
 API.interceptors.request.use((req) => {
@@ -23,7 +13,7 @@ API.interceptors.request.use((req) => {
   return req;
 });
 
-// Auto-logout on 401 (expired/invalid token)
+// Auto logout on 401
 API.interceptors.response.use(
   (res) => res,
   (err) => {
@@ -35,5 +25,19 @@ API.interceptors.response.use(
     return Promise.reject(err);
   }
 );
+
+// Error helper
+export const getApiErrorMessage = (
+  err,
+  fallback = "Something went wrong. Please try again."
+) => {
+  return (
+    err?.response?.data?.details ||
+    err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    err?.message ||
+    fallback
+  );
+};
 
 export default API;
