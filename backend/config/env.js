@@ -5,6 +5,7 @@ const REQUIRED_IN_PRODUCTION = [
   "DB_HOST",
   "DB_USER",
   "DB_NAME",
+  "CORS_ORIGIN",
 ];
 
 function validateEnv() {
@@ -21,6 +22,10 @@ function validateEnv() {
 
   if (isProduction && process.env.DB_USER === "root") {
     throw new Error("Do not use the MySQL root user in production. Configure a dedicated DB user.");
+  }
+
+  if (isProduction && process.env.CORS_ORIGIN === "*") {
+    throw new Error("CORS_ORIGIN cannot be '*' in production. Set it to your specific frontend domain.");
   }
 
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET === "changeme_in_production") {

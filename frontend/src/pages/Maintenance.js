@@ -50,9 +50,9 @@ const Maintenance = () => {
   const timerRef = useRef(null);
   const countdownRef = useRef(null);
 
-  const storedUser = (() => {
+  const storedUser = React.useMemo(() => {
     try { return JSON.parse(localStorage.getItem("user")) || {}; } catch { return {}; }
-  })();
+  }, []);
   const canManageRequests = ["admin", "technician"].includes(storedUser.role);
 
   const [form, setForm] = useState({
@@ -76,16 +76,16 @@ const Maintenance = () => {
       const [mRes, aRes, uRes] = await Promise.all([
         API.get("/maintenance"),
         API.get("/assets"),
-        API.get("/users"),
+        canManageRequests ? API.get("/users") : Promise.resolve({ data: [] }),
       ]);
       setRequests(mRes.data);
       setAssets(aRes.data);
-      setUsers(uRes.data);
+      if (canManageRequests) setUsers(uRes.data);
       setLastRefresh(new Date());
     } catch (err) {
       console.error("Fetch error:", err);
     }
-  }, []);
+  }, [canManageRequests]);
 
   // Auto refresh
   useEffect(() => {

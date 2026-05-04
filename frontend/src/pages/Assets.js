@@ -42,7 +42,7 @@ const Assets = () => {
     setErrorMessage("");
     try {
       const res = await API.get("/assets");
-      setAssets(res.data);
+      setAssets(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Error fetching assets:", err);
       setErrorMessage("Unable to load assets right now. Please try again.");

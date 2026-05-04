@@ -339,7 +339,7 @@ export default function AIAgent() {
     }
 
     setRequestPromptShown(true);
-  }, [activeRequests, loadingData, requestPromptShown]);
+  }, [activeRequests, loadingData, requestPromptShown, requests.length]);
 
   // Helper to find asset ID by name or tag from the text
   const findAssetInText = (text) => {

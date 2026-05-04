@@ -257,6 +257,7 @@ const tryOpenAI = async ({ message, history, context }) => {
   if (!process.env.OPENAI_API_KEY || typeof fetch !== "function") return null;
 
   const systemPrompt = `You are an expert IT asset-management technician inside an AssetSphere Pro app.
+Response must be a single JSON object. Do not include markdown formatting or backticks.
 Return ONLY valid JSON with these keys:
 category, severity, confidence, text, cause, solutionSteps, checks, followUpQuestion, nextAction, safetyNotes, scope, impact, estimatedTime, escalationPath, resolutionNote, quickReplies, matchedSignals, requestDraft.
 Rules:
@@ -331,17 +332,4 @@ router.post("/troubleshoot", async (req, res) => {
     res.json(buildLocalAnswer({ message, context: safeContext }));
   }
 });
-
-// Export logic for unit tests
-router._internals = {
-  detectIssue,
-  inferScope,
-  inferImpact,
-  estimateTime,
-  buildResolutionNote,
-  buildEscalationPath,
-  makeTechnicianPlan,
-  buildLocalAnswer,
-};
-
 module.exports = router;
