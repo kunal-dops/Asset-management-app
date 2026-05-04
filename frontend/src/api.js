@@ -1,9 +1,8 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://asset-management-app-kanj.onrender.com/api",
+  baseURL: process.env.REACT_APP_API_URL,
 });
-
 export default API;
 export const getApiErrorMessage = (err, fallback = "Something went wrong. Please try again.") => {
   return (
