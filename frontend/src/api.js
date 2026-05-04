@@ -1,10 +1,10 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
-  timeout: 15000,
+  baseURL: process.env.REACT_APP_API_URL,
 });
 
+export default API;
 export const getApiErrorMessage = (err, fallback = "Something went wrong. Please try again.") => {
   return (
     err?.response?.data?.details ||
