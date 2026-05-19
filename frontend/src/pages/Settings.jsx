@@ -5,7 +5,7 @@ import API from "../api";
 import {
   FaSave, FaUndoAlt, FaSignOutAlt, FaUser, FaShieldAlt,
   FaSlidersH, FaServer, FaCheckCircle, FaExclamationCircle,
-  FaMoon, FaSun, FaTable, FaBell, FaKey, FaInfoCircle,
+  FaMoon, FaSun, FaTable, FaBell, FaInfoCircle,
   FaSyncAlt, FaLock, FaDatabase
 } from "react-icons/fa";
 
@@ -278,16 +278,6 @@ export default function Settings() {
             { label: "Token storage", value: "localStorage" },
             { label: "Session type", value: "JWT · 8h expiry" },
           ].map(({ label, value }) => <InfoRow key={label} label={label} value={value} />)}
-        </div>
-
-        <div style={{ padding: "20px", borderRadius: "14px", background: "#fff7ed", border: "1px solid #fed7aa" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-            <FaKey style={{ color: "#ea580c" }} />
-            <span style={{ fontWeight: 700, color: "#9a3412" }}>Password</span>
-          </div>
-          <p style={{ margin: "0 0 16px", color: "#7c2d12", fontSize: "0.88rem" }}>
-            Password changes require a backend API call. Wire up <code style={{ background: "#fed7aa", padding: "1px 6px", borderRadius: "4px" }}>PUT /api/users/:id/password</code> to enable this.
-          </p>
         </div>
 
         <div style={{ borderTop: "1px solid #fee2e2", paddingTop: "20px" }}>
