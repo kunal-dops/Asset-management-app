@@ -314,7 +314,6 @@ const Assets = () => {
                 <tr>
                   <th>ID</th>
                   <th>Name</th>
-                  <th>Tag</th>
                   <th>Category</th>
                   <th>Brand</th>
                   <th>Model</th>
@@ -326,16 +325,15 @@ const Assets = () => {
               <tbody>
                 {isLoadingAssets ? (
                   <tr>
-                    <td colSpan="9" className="empty-state-cell">
+                    <td colSpan="8" className="empty-state-cell">
                       Loading assets...
                     </td>
                   </tr>
                 ) : filteredAssets.length > 0 ? (
                   filteredAssets.map((asset) => (
                     <tr key={asset.asset_id}>
-                      <td>{`asset_${String(assets.findIndex(x => x.asset_id === asset.asset_id) + 1).padStart(2, "0")}`}</td>
-                      <td>{asset.asset_name}</td>
                       <td>{asset.asset_tag}</td>
+                      <td>{asset.asset_name}</td>
                       <td>{asset.category_name || "N/A"}</td>
                       <td>{asset.brand || "N/A"}</td>
                       <td>{asset.model || "N/A"}</td>
@@ -358,7 +356,7 @@ const Assets = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="9" className="empty-state-cell">
+                    <td colSpan="8" className="empty-state-cell">
                       No assets found. Start by registering your first IT asset.
                     </td>
                   </tr>
