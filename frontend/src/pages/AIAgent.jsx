@@ -616,6 +616,17 @@ export default function AIAgent() {
                         </div>
                       </div>
                       <p>{message.text}</p>
+                      {Number.isFinite(message.confidence) && message.confidence > 0 && (
+                        <div className="agent-confidence-bar">
+                          <div className="agent-confidence-bar-label">
+                            <span>Confidence</span>
+                            <strong>{message.confidence}%</strong>
+                          </div>
+                          <div className="agent-confidence-bar-track">
+                            <div className="agent-confidence-bar-fill" style={{ width: `${message.confidence}%` }} />
+                          </div>
+                        </div>
+                      )}
                       {message.cause && (
                         <div className="agent-cause-box">
                           <strong>Problem</strong>
