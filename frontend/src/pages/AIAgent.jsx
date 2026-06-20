@@ -575,7 +575,11 @@ export default function AIAgent() {
               </div>
               <div>
                 <h2>Troubleshooting Agent</h2>
-                <p>Offline assistant for first response and escalation notes</p>
+                <p>
+                  {messages.some(m => m.source === "claude")
+                    ? "Powered by Claude AI · Advanced IT diagnostic agent"
+                    : "AI-powered assistant for first response and escalation notes"}
+                </p>
               </div>
             </div>
             <span className="agent-status simple">
@@ -600,9 +604,16 @@ export default function AIAgent() {
                     <>
                       <div className="agent-message-header">
                         <span>{message.category}</span>
-                        <strong style={{ background: style.bg, color: style.color, borderColor: style.border }}>
-                          {message.severity}
-                        </strong>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          {message.source === "claude" && (
+                            <span style={{ fontSize: "10px", fontWeight: 600, background: "#7c3aed", color: "#fff", borderRadius: "4px", padding: "2px 6px", letterSpacing: "0.03em" }}>
+                              Claude AI
+                            </span>
+                          )}
+                          <strong style={{ background: style.bg, color: style.color, borderColor: style.border }}>
+                            {message.severity}
+                          </strong>
+                        </div>
                       </div>
                       <p>{message.text}</p>
                       {message.cause && (
@@ -664,7 +675,7 @@ export default function AIAgent() {
                   <span />
                   <span />
                   <span />
-                  Technician is thinking...
+                  {messages.some(m => m.source === "claude") ? "Claude AI is thinking..." : "Technician is thinking..."}
                 </div>
               </div>
             )}

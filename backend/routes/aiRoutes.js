@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const Anthropic = require("@anthropic-ai/sdk");
 
 const KNOWLEDGE_BASE = [
   {
@@ -253,58 +254,52 @@ const buildLocalAnswer = ({ message, context = {} }) => {
   };
 };
 
-const tryOpenAI = async ({ message, history, context }) => {
-  if (!process.env.OPENAI_API_KEY || typeof fetch !== "function") return null;
+const tryClaude = async ({ message, history, context }) => {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
 
-  const systemPrompt = `You are an expert IT asset-management technician inside an AssetSphere Pro app.
-Response must be a single JSON object. Do not include markdown formatting or backticks.
-Return ONLY valid JSON with these keys:
-category, severity, confidence, text, cause, solutionSteps, checks, followUpQuestion, nextAction, safetyNotes, scope, impact, estimatedTime, escalationPath, resolutionNote, quickReplies, matchedSignals, requestDraft.
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+  const systemPrompt = `You are an expert IT asset-management technician inside an AssetSphere Pro application.
+Respond ONLY with a single valid JSON object — no markdown, no backticks, no explanation outside the JSON.
+Required keys: category, severity, confidence, text, cause, solutionSteps, checks, followUpQuestion, nextAction, safetyNotes, scope, impact, estimatedTime, escalationPath, resolutionNote, quickReplies, matchedSignals, requestDraft.
 Rules:
-- solutionSteps: direct fix steps.
-- checks: evidence to collect.
-- requestDraft: { request_type, priority, issue_description }.
-- Never request passwords.
-- confidence: number 0-100.
+- solutionSteps: array of direct, actionable fix steps.
+- checks: array of evidence to collect before escalating.
+- requestDraft: object with keys request_type, priority, issue_description.
+- severity: one of "Urgent", "High", "Medium", "Normal".
+- confidence: integer 0-100.
+- Never request passwords or sensitive credentials.
+- Keep responses concise and technical.
 Context:
 User role: ${context.userRole || "user"}
 Assets loaded: ${context.assetCount || 0}
-Open requests: ${context.openRequestCount || 0}`;
+Open service requests: ${context.openRequestCount || 0}`;
 
-  const userPrompt = `Recent chat history: ${JSON.stringify(history || []).slice(0, 2000)}\n\nCurrent Problem: ${message}`;
+  const chatHistory = (history || []).slice(-8).map((m) => ({
+    role: m.role === "user" ? "user" : "assistant",
+    content: String(m.content || ""),
+  }));
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      temperature: 0.2,
-      response_format: { type: "json_object" }
-    }),
+  const userContent = `${chatHistory.length > 0 ? `Recent conversation:\n${chatHistory.map(m => `${m.role}: ${m.content}`).join("\n")}\n\n` : ""}Current problem: ${message}`;
+
+  const response = await client.messages.create({
+    model: "claude-opus-4-8",
+    max_tokens: 1024,
+    thinking: { type: "adaptive" },
+    system: systemPrompt,
+    messages: [{ role: "user", content: userContent }],
   });
 
-  if (!response.ok) {
-    const errText = await response.text();
-    console.error("OpenAI API Error:", response.status, errText);
-    return null;
-  }
+  const rawText = response.content.find((b) => b.type === "text")?.text;
+  if (!rawText) return null;
 
-  const data = await response.json();
-  const output = data.choices?.[0]?.message?.content;
-  if (!output) return null;
+  const cleaned = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
 
   try {
-    const parsed = JSON.parse(output);
-    return { source: "openai", ...parsed };
+    const parsed = JSON.parse(cleaned);
+    return { ...parsed, source: "claude" };
   } catch (err) {
-    console.error("AI JSON Parse Error:", err);
+    console.error("Claude JSON parse error:", err.message, "\nRaw:", rawText.slice(0, 300));
     return null;
   }
 };
@@ -322,8 +317,8 @@ router.post("/troubleshoot", async (req, res) => {
   };
 
   try {
-    const aiAnswer = await tryOpenAI({ message, history, context: safeContext }).catch((err) => {
-      console.error("AI provider failed:", err.message);
+    const aiAnswer = await tryClaude({ message, history, context: safeContext }).catch((err) => {
+      console.error("Claude API failed:", err.message);
       return null;
     });
     res.json(aiAnswer || buildLocalAnswer({ message, context: safeContext }));
