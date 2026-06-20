@@ -314,6 +314,7 @@ const Assets = () => {
                 <tr>
                   <th>ID</th>
                   <th>Name</th>
+                  <th>Tag</th>
                   <th>Category</th>
                   <th>Brand</th>
                   <th>Model</th>
@@ -325,7 +326,7 @@ const Assets = () => {
               <tbody>
                 {isLoadingAssets ? (
                   <tr>
-                    <td colSpan="8" className="empty-state-cell">
+                    <td colSpan="9" className="empty-state-cell">
                       Loading assets...
                     </td>
                   </tr>
@@ -334,6 +335,7 @@ const Assets = () => {
                     <tr key={asset.asset_id}>
                       <td>{asset.asset_tag}</td>
                       <td>{asset.asset_name}</td>
+                      <td>{asset.serial_number || "—"}</td>
                       <td>{asset.category_name || "N/A"}</td>
                       <td>{asset.brand || "N/A"}</td>
                       <td>{asset.model || "N/A"}</td>
@@ -356,7 +358,7 @@ const Assets = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="empty-state-cell">
+                    <td colSpan="9" className="empty-state-cell">
                       No assets found. Start by registering your first IT asset.
                     </td>
                   </tr>
