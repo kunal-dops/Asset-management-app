@@ -1,15 +1,12 @@
-const db = require("../config/db");
+const mongoose = require("mongoose");
+const Asset = require("../models/Asset");
+const AssetAssignment = require("../models/AssetAssignment");
+const MaintenanceRequest = require("../models/MaintenanceRequest");
+
 const VALID_ASSET_STATUSES = new Set(["available", "assigned", "maintenance", "retired"]);
 
 function emptyToNull(v) {
   return v === "" || v === undefined ? null : v;
-}
-
-function toIntOrNull(v) {
-  const val = emptyToNull(v);
-  if (val === null) return null;
-  const n = Number.parseInt(String(val), 10);
-  return Number.isFinite(n) ? n : null;
 }
 
 function toFloatOrNull(v) {
@@ -21,7 +18,6 @@ function toFloatOrNull(v) {
 
 function toDateOrNull(v) {
   const val = emptyToNull(v);
-  // react date input sends YYYY-MM-DD; MySQL accepts that or NULL
   return val === null ? null : val;
 }
 
@@ -31,35 +27,36 @@ function validateStatus(status) {
   return VALID_ASSET_STATUSES.has(normalized) ? normalized : null;
 }
 
-function parseAssetId(rawId) {
-  const id = Number.parseInt(String(rawId), 10);
-  return Number.isFinite(id) && id > 0 ? id : null;
+function toObjectIdOrNull(v) {
+  const val = emptyToNull(v);
+  if (val === null) return null;
+  return mongoose.Types.ObjectId.isValid(val) ? val : null;
 }
 
-// ===============================
 // GET ALL ASSETS
-// ===============================
-exports.getAssets = (req, res) => {
-  const sql = `
-    SELECT a.*, c.category_name
-    FROM assets a
-    LEFT JOIN categories c ON a.category_id = c.category_id
-    ORDER BY a.asset_id DESC
-  `;
+exports.getAssets = async (req, res) => {
+  try {
+    const assets = await Asset.find()
+      .populate("category_id", "category_name")
+      .sort({ _id: -1 })
+      .lean();
 
-  db.query(sql, (err, result) => {
-    if (err) {
-      console.error("Get Assets Error:", err);
-      return res.status(500).json({ error: "Failed to fetch assets" });
-    }
-    res.json(result);
-  });
+    res.json(
+      assets.map(({ _id, category_id, ...a }) => ({
+        asset_id: _id,
+        ...a,
+        category_id: category_id?._id || null,
+        category_name: category_id?.category_name || null,
+      }))
+    );
+  } catch (err) {
+    console.error("Get Assets Error:", err);
+    res.status(500).json({ error: "Failed to fetch assets" });
+  }
 };
 
-// ===============================
 // ADD NEW ASSET
-// ===============================
-exports.addAsset = (req, res) => {
+exports.addAsset = async (req, res) => {
   const {
     asset_name,
     asset_tag,
@@ -73,7 +70,7 @@ exports.addAsset = (req, res) => {
     warranty_expiry,
     status,
     location,
-    description
+    description,
   } = req.body;
 
   if (!asset_name || !String(asset_name).trim()) {
@@ -83,61 +80,47 @@ exports.addAsset = (req, res) => {
     return res.status(400).json({ error: "asset_tag is required" });
   }
 
-  const normalizedCategoryId = toIntOrNull(category_id);
+  const normalizedCategoryId = toObjectIdOrNull(category_id);
   if (!normalizedCategoryId) {
-    return res.status(400).json({ error: "category_id is required" });
+    return res.status(400).json({ error: "category_id is required and must be valid" });
   }
+
   const normalizedStatus = validateStatus(status);
   if (!normalizedStatus) {
     return res.status(400).json({ error: "Invalid asset status" });
   }
 
-  const sql = `
-    INSERT INTO assets 
-    (asset_name, asset_tag, serial_number, category_id, brand, model, purchase_date, purchase_cost, vendor, warranty_expiry, status, location, description)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `;
-
-  db.query(
-    sql,
-    [
-      String(asset_name).trim(),
-      String(asset_tag).trim(),
-      emptyToNull(serial_number),
-      normalizedCategoryId,
-      emptyToNull(brand),
-      emptyToNull(model),
-      toDateOrNull(purchase_date),
-      toFloatOrNull(purchase_cost),
-      emptyToNull(vendor),
-      toDateOrNull(warranty_expiry),
-      normalizedStatus,
-      emptyToNull(location),
-      emptyToNull(description)
-    ],
-    (err, result) => {
-      if (err) {
-        if (err.code === "ER_DUP_ENTRY") {
-          return res.status(409).json({
-            error: "Asset tag or serial number already exists",
-            details: "Please use unique asset tag and serial number values.",
-          });
-        }
-        console.error("Add Asset Error:", err);
-        return res.status(500).json({
-          error: "Failed to add asset",
-          details: err.sqlMessage || err.message,
-        });
-      }
-      res.status(201).json({ message: "Asset added successfully" });
+  try {
+    await Asset.create({
+      asset_name: String(asset_name).trim(),
+      asset_tag: String(asset_tag).trim(),
+      serial_number: emptyToNull(serial_number),
+      category_id: normalizedCategoryId,
+      brand: emptyToNull(brand),
+      model: emptyToNull(model),
+      purchase_date: toDateOrNull(purchase_date),
+      purchase_cost: toFloatOrNull(purchase_cost),
+      vendor: emptyToNull(vendor),
+      warranty_expiry: toDateOrNull(warranty_expiry),
+      status: normalizedStatus,
+      location: emptyToNull(location),
+      description: emptyToNull(description),
+    });
+    res.status(201).json({ message: "Asset added successfully" });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({
+        error: "Asset tag or serial number already exists",
+        details: "Please use unique asset tag and serial number values.",
+      });
     }
-  );
+    console.error("Add Asset Error:", err);
+    res.status(500).json({ error: "Failed to add asset", details: err.message });
+  }
 };
 
-// ===============================
 // UPDATE ASSET
-// ===============================
-exports.updateAsset = (req, res) => {
+exports.updateAsset = async (req, res) => {
   const { id } = req.params;
   const {
     asset_name,
@@ -152,21 +135,17 @@ exports.updateAsset = (req, res) => {
     warranty_expiry,
     status,
     location,
-    description
+    description,
   } = req.body;
 
-  const normalizedCategoryId = toIntOrNull(category_id);
-  const normalizedAssetId = parseAssetId(id);
-  const normalizedStatus = validateStatus(status);
-
-  if (!normalizedAssetId) {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ error: "Invalid asset id" });
   }
-  if (status !== undefined && !normalizedStatus) {
+  if (status !== undefined && !validateStatus(status)) {
     return res.status(400).json({ error: "Invalid asset status" });
   }
-  if (category_id !== undefined && !normalizedCategoryId) {
-    return res.status(400).json({ error: "category_id is required" });
+  if (category_id !== undefined && !toObjectIdOrNull(category_id)) {
+    return res.status(400).json({ error: "category_id is required and must be valid" });
   }
   if (asset_name !== undefined && !String(asset_name).trim()) {
     return res.status(400).json({ error: "asset_name cannot be empty" });
@@ -175,125 +154,60 @@ exports.updateAsset = (req, res) => {
     return res.status(400).json({ error: "asset_tag cannot be empty" });
   }
 
-  const sql = `
-    UPDATE assets SET
-      asset_name = ?,
-      asset_tag = ?,
-      serial_number = ?,
-      category_id = ?,
-      brand = ?,
-      model = ?,
-      purchase_date = ?,
-      purchase_cost = ?,
-      vendor = ?,
-      warranty_expiry = ?,
-      status = ?,
-      location = ?,
-      description = ?
-    WHERE asset_id = ?
-  `;
+  try {
+    const result = await Asset.findByIdAndUpdate(id, {
+      asset_name: emptyToNull(asset_name),
+      asset_tag: emptyToNull(asset_tag),
+      serial_number: emptyToNull(serial_number),
+      category_id: toObjectIdOrNull(category_id),
+      brand: emptyToNull(brand),
+      model: emptyToNull(model),
+      purchase_date: toDateOrNull(purchase_date),
+      purchase_cost: toFloatOrNull(purchase_cost),
+      vendor: emptyToNull(vendor),
+      warranty_expiry: toDateOrNull(warranty_expiry),
+      status: validateStatus(status) || "available",
+      location: emptyToNull(location),
+      description: emptyToNull(description),
+    });
 
-  db.query(
-    sql,
-    [
-      emptyToNull(asset_name),
-      emptyToNull(asset_tag),
-      emptyToNull(serial_number),
-      normalizedCategoryId,
-      emptyToNull(brand),
-      emptyToNull(model),
-      toDateOrNull(purchase_date),
-      toFloatOrNull(purchase_cost),
-      emptyToNull(vendor),
-      toDateOrNull(warranty_expiry),
-      normalizedStatus || "available",
-      emptyToNull(location),
-      emptyToNull(description),
-      normalizedAssetId
-    ],
-    (err, result) => {
-      if (err) {
-        if (err.code === "ER_DUP_ENTRY") {
-          return res.status(409).json({
-            error: "Asset tag or serial number already exists",
-            details: "Please use unique asset tag and serial number values.",
-          });
-        }
-        console.error("Update Asset Error:", err);
-        return res.status(500).json({
-          error: "Failed to update asset",
-          details: err.sqlMessage || err.message,
-        });
-      }
-      if (!result.affectedRows) {
-        return res.status(404).json({ error: "Asset not found" });
-      }
-      res.json({ message: "Asset updated successfully" });
+    if (!result) {
+      return res.status(404).json({ error: "Asset not found" });
     }
-  );
+    res.json({ message: "Asset updated successfully" });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({
+        error: "Asset tag or serial number already exists",
+        details: "Please use unique asset tag and serial number values.",
+      });
+    }
+    console.error("Update Asset Error:", err);
+    res.status(500).json({ error: "Failed to update asset", details: err.message });
+  }
 };
 
-// ===============================
-// DELETE ASSET (SAFE DELETE)
-// ===============================
-exports.deleteAsset = (req, res) => {
-  const assetId = parseAssetId(req.params.id);
-  if (!assetId) {
+// DELETE ASSET (cascades to assignments and maintenance requests)
+exports.deleteAsset = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ error: "Invalid asset id" });
   }
 
-  db.getConnection((connectionErr, connection) => {
-    if (connectionErr) {
-      console.error("Delete Asset Connection Error:", connectionErr);
-      return res.status(500).json({ error: "Delete failed" });
+  try {
+    const asset = await Asset.findById(id);
+    if (!asset) {
+      return res.status(404).json({ error: "Asset not found" });
     }
 
-    connection.beginTransaction((beginErr) => {
-      if (beginErr) {
-        connection.release();
-        console.error("Delete Asset Transaction Start Error:", beginErr);
-        return res.status(500).json({ error: "Delete failed" });
-      }
+    await AssetAssignment.deleteMany({ asset_id: id });
+    await MaintenanceRequest.deleteMany({ asset_id: id });
+    await Asset.findByIdAndDelete(id);
 
-      const rollbackWithError = (logLabel, err, responseError) => {
-        connection.rollback(() => {
-          connection.release();
-          console.error(logLabel, err);
-          res.status(500).json({ error: responseError });
-        });
-      };
-
-      connection.query("DELETE FROM asset_assignments WHERE asset_id = ?", [assetId], (err1) => {
-        if (err1) {
-          return rollbackWithError("Delete Assignments Error:", err1, "Failed to delete related assignments");
-        }
-
-        connection.query("DELETE FROM maintenance_requests WHERE asset_id = ?", [assetId], (err2) => {
-          if (err2) {
-            return rollbackWithError("Delete Maintenance Error:", err2, "Failed to delete related maintenance requests");
-          }
-
-          connection.query("DELETE FROM assets WHERE asset_id = ?", [assetId], (err3, result) => {
-            if (err3) {
-              return rollbackWithError("Delete Asset Error:", err3, "Delete failed");
-            }
-            if (!result.affectedRows) {
-              return connection.rollback(() => {
-                connection.release();
-                res.status(404).json({ error: "Asset not found" });
-              });
-            }
-
-            connection.commit((commitErr) => {
-              if (commitErr) {
-                return rollbackWithError("Delete Asset Commit Error:", commitErr, "Delete failed");
-              }
-              connection.release();
-              res.json({ message: "Asset deleted successfully" });
-            });
-          });
-        });
-      });
-    });
-  });
+    res.json({ message: "Asset deleted successfully" });
+  } catch (err) {
+    console.error("Delete Asset Error:", err);
+    res.status(500).json({ error: "Delete failed" });
+  }
 };

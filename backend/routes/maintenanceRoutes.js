@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../config/db");
+const mongoose = require("mongoose");
+const MaintenanceRequest = require("../models/MaintenanceRequest");
+const MaintenanceAudit = require("../models/MaintenanceAudit");
+const Asset = require("../models/Asset");
 const ensureMaintenanceSchema = require("../config/maintenanceSchema");
 const requireRole = require("../middleware/roleMiddleware");
 
@@ -24,42 +27,26 @@ const editableFields = [
   "checked_by",
 ];
 
-const run = (sql, params = []) =>
-  new Promise((resolve, reject) => {
-    db.query(sql, params, (err, result) => (err ? reject(err) : resolve(result)));
-  });
-
 const getActor = (req) => ({
   userId: req.user?.user_id || req.body.edited_by || null,
   role: req.user?.role || null,
 });
 
-const canManageMaintenance = (req) => ["admin", "technician"].includes(req.user?.role);
-
 const normalizeEmpty = (value) => (value === "" || value === undefined ? null : value);
 
 const getRequestById = async (id) => {
-  const rows = await run("SELECT * FROM maintenance_requests WHERE request_id = ?", [id]);
-  return rows[0] || null;
+  return await MaintenanceRequest.findById(id).lean();
 };
 
 const writeAudit = async ({ requestId, action, actor, changes = {}, notes = null }) => {
-  await ensureMaintenanceSchema();
-  await run(
-    `
-      INSERT INTO maintenance_request_audit
-      (request_id, action, edited_by, edited_role, changes_json, notes)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `,
-    [
-      requestId,
-      action,
-      actor?.userId || null,
-      actor?.role || null,
-      JSON.stringify(changes),
-      notes,
-    ]
-  );
+  await MaintenanceAudit.create({
+    request_id: requestId,
+    action,
+    edited_by: actor?.userId && actor.userId !== 0 ? actor.userId : null,
+    edited_role: actor?.role || null,
+    changes_json: JSON.stringify(changes),
+    notes,
+  });
 };
 
 const buildChanges = (before, after) => {
@@ -87,55 +74,67 @@ router.use(async (req, res, next) => {
 });
 
 // GET all maintenance requests
-router.get("/", (req, res) => {
-  const onlyOwnRequests = req.user?.role === "user";
-  const sql = `
-    SELECT mr.*,
-           a.asset_name,
-           a.asset_tag,
-           a.status AS asset_status,
-           u.full_name AS reported_by_name,
-           t.full_name AS technician_name,
-           ab.full_name AS assigned_by_name,
-           cb.full_name AS checked_by_name,
-           eb.full_name AS last_edited_by_name
-    FROM maintenance_requests mr
-    JOIN assets a ON mr.asset_id = a.asset_id
-    JOIN users u ON mr.reported_by = u.user_id
-    LEFT JOIN users t ON mr.technician_id = t.user_id
-    LEFT JOIN users ab ON mr.assigned_by = ab.user_id
-    LEFT JOIN users cb ON mr.checked_by = cb.user_id
-    LEFT JOIN users eb ON mr.last_edited_by = eb.user_id
-    ${onlyOwnRequests ? "WHERE mr.reported_by = ?" : ""}
-    ORDER BY mr.request_id DESC
-  `;
+router.get("/", async (req, res) => {
+  try {
+    const onlyOwnRequests = req.user?.role === "user";
+    const filter = onlyOwnRequests ? { reported_by: req.user.user_id } : {};
 
-  db.query(sql, onlyOwnRequests ? [req.user.user_id] : [], (err, result) => {
-    if (err) {
-      console.error("GET MAINTENANCE ERROR:", err);
-      return res.status(500).json({ error: err.message });
-    }
-    res.json(result);
-  });
+    const requests = await MaintenanceRequest.find(filter)
+      .populate("asset_id", "asset_name asset_tag status")
+      .populate("reported_by", "full_name")
+      .populate("technician_id", "full_name")
+      .populate("assigned_by", "full_name")
+      .populate("checked_by", "full_name")
+      .populate("last_edited_by", "full_name")
+      .sort({ _id: -1 })
+      .lean();
+
+    res.json(
+      requests.map(({ _id, asset_id, reported_by, technician_id, assigned_by, checked_by, last_edited_by, ...r }) => ({
+        request_id: _id,
+        asset_id: asset_id?._id || null,
+        asset_name: asset_id?.asset_name || null,
+        asset_tag: asset_id?.asset_tag || null,
+        asset_status: asset_id?.status || null,
+        reported_by: reported_by?._id || null,
+        reported_by_name: reported_by?.full_name || null,
+        technician_id: technician_id?._id || null,
+        technician_name: technician_id?.full_name || null,
+        assigned_by: assigned_by?._id || null,
+        assigned_by_name: assigned_by?.full_name || null,
+        checked_by: checked_by?._id || null,
+        checked_by_name: checked_by?.full_name || null,
+        last_edited_by: last_edited_by?._id || null,
+        last_edited_by_name: last_edited_by?.full_name || null,
+        ...r,
+      }))
+    );
+  } catch (err) {
+    console.error("GET MAINTENANCE ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // GET audit history for one request
-router.get("/:id/audit", requireRole("admin", "technician"), (req, res) => {
-  const sql = `
-    SELECT a.*, u.full_name AS edited_by_name
-    FROM maintenance_request_audit a
-    LEFT JOIN users u ON a.edited_by = u.user_id
-    WHERE a.request_id = ?
-    ORDER BY a.audit_id DESC
-  `;
+router.get("/:id/audit", requireRole("admin", "technician"), async (req, res) => {
+  try {
+    const audits = await MaintenanceAudit.find({ request_id: req.params.id })
+      .populate("edited_by", "full_name")
+      .sort({ _id: -1 })
+      .lean();
 
-  db.query(sql, [req.params.id], (err, result) => {
-    if (err) {
-      console.error("GET MAINTENANCE AUDIT ERROR:", err);
-      return res.status(500).json({ error: err.message });
-    }
-    res.json(result);
-  });
+    res.json(
+      audits.map(({ _id, edited_by, ...a }) => ({
+        audit_id: _id,
+        edited_by: edited_by?._id || null,
+        edited_by_name: edited_by?.full_name || null,
+        ...a,
+      }))
+    );
+  } catch (err) {
+    console.error("GET MAINTENANCE AUDIT ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ADD maintenance request
@@ -165,29 +164,23 @@ router.post("/", requireRole("admin", "technician", "user"), async (req, res) =>
   }
 
   try {
-    const result = await run(
-      `
-        INSERT INTO maintenance_requests
-        (asset_id, reported_by, issue_description, request_date, priority, request_type, location, sublocation, department, last_edited_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      [
-        asset_id,
-        reported_by,
-        issue_description,
-        request_date,
-        priority,
-        normalizeEmpty(request_type),
-        normalizeEmpty(location),
-        normalizeEmpty(sublocation),
-        normalizeEmpty(department),
-        actor.userId,
-      ]
-    );
+    const newRequest = await MaintenanceRequest.create({
+      asset_id,
+      reported_by,
+      issue_description,
+      request_date,
+      priority,
+      request_type: normalizeEmpty(request_type),
+      location: normalizeEmpty(location),
+      sublocation: normalizeEmpty(sublocation),
+      department: normalizeEmpty(department),
+      last_edited_by: actor.userId && actor.userId !== 0 ? actor.userId : null,
+    });
 
-    await run("UPDATE assets SET status = 'maintenance' WHERE asset_id = ?", [asset_id]);
+    await Asset.findByIdAndUpdate(asset_id, { status: "maintenance" });
+
     await writeAudit({
-      requestId: result.insertId,
+      requestId: newRequest._id,
       action: "created",
       actor,
       changes: {
@@ -204,7 +197,7 @@ router.post("/", requireRole("admin", "technician", "user"), async (req, res) =>
       notes: "Service request created by user",
     });
 
-    res.status(201).json({ message: "Maintenance request created successfully", result });
+    res.status(201).json({ message: "Maintenance request created successfully", request_id: newRequest._id });
   } catch (err) {
     console.error("ADD MAINTENANCE ERROR:", err);
     res.status(500).json({ error: err.message });
@@ -227,19 +220,12 @@ router.put("/:id/assign", requireRole("admin", "technician"), async (req, res) =
 
     const update = {
       technician_id,
-      assigned_by: actor.userId,
+      assigned_by: actor.userId && actor.userId !== 0 ? actor.userId : null,
       status: before.status === "resolved" ? "resolved" : "in_progress",
-      last_edited_by: actor.userId,
+      last_edited_by: actor.userId && actor.userId !== 0 ? actor.userId : null,
     };
 
-    await run(
-      `
-        UPDATE maintenance_requests
-        SET technician_id = ?, assigned_by = ?, status = ?, last_edited_by = ?
-        WHERE request_id = ?
-      `,
-      [update.technician_id, update.assigned_by, update.status, update.last_edited_by, id]
-    );
+    await MaintenanceRequest.findByIdAndUpdate(id, update);
 
     await writeAudit({
       requestId: id,
@@ -260,6 +246,7 @@ router.put("/:id/assign", requireRole("admin", "technician"), async (req, res) =
 router.put("/:id", requireRole("admin", "technician"), async (req, res) => {
   const actor = getActor(req);
   const { id } = req.params;
+
   const before = await getRequestById(id).catch((err) => {
     console.error("GET MAINTENANCE REQUEST ERROR:", err);
     return null;
@@ -284,7 +271,7 @@ router.put("/:id", requireRole("admin", "technician"), async (req, res) => {
     resolution_notes: normalizeEmpty(req.body.resolution_notes ?? before.resolution_notes),
     resolved_date: normalizeEmpty(req.body.resolved_date ?? before.resolved_date),
     checked_by: normalizeEmpty(req.body.checked_by ?? before.checked_by),
-    last_edited_by: actor.userId,
+    last_edited_by: actor.userId && actor.userId !== 0 ? actor.userId : null,
   };
 
   if (!VALID_PRIORITIES.has(nextValues.priority)) {
@@ -299,53 +286,16 @@ router.put("/:id", requireRole("admin", "technician"), async (req, res) => {
   }
 
   try {
-    await run(
-      `
-        UPDATE maintenance_requests
-        SET asset_id = ?,
-            reported_by = ?,
-            issue_description = ?,
-            request_date = ?,
-            priority = ?,
-            request_type = ?,
-            location = ?,
-            sublocation = ?,
-            department = ?,
-            status = ?,
-            technician_id = ?,
-            resolution_notes = ?,
-            resolved_date = ?,
-            checked_by = ?,
-            last_edited_by = ?
-        WHERE request_id = ?
-      `,
-      [
-        nextValues.asset_id,
-        nextValues.reported_by,
-        nextValues.issue_description,
-        nextValues.request_date,
-        nextValues.priority,
-        nextValues.request_type,
-        nextValues.location,
-        nextValues.sublocation,
-        nextValues.department,
-        nextValues.status,
-        nextValues.technician_id,
-        nextValues.resolution_notes,
-        nextValues.resolved_date,
-        nextValues.checked_by,
-        nextValues.last_edited_by,
-        id,
-      ]
-    );
+    await MaintenanceRequest.findByIdAndUpdate(id, nextValues);
 
-    await run("UPDATE assets SET status = ? WHERE asset_id = ?", [
-      nextValues.status === "resolved" ? "available" : "maintenance",
-      nextValues.asset_id,
-    ]);
+    await Asset.findByIdAndUpdate(nextValues.asset_id, {
+      status: nextValues.status === "resolved" ? "available" : "maintenance",
+    });
 
     const changes = buildChanges(before, nextValues);
-    const action = nextValues.status === "resolved" && before.status !== "resolved" ? "resolved" : "updated";
+    const action =
+      nextValues.status === "resolved" && before.status !== "resolved" ? "resolved" : "updated";
+
     await writeAudit({
       requestId: id,
       action,
@@ -354,7 +304,12 @@ router.put("/:id", requireRole("admin", "technician"), async (req, res) => {
       notes: req.body.audit_note || "Service request edited",
     });
 
-    res.json({ message: action === "resolved" ? "Maintenance request resolved successfully" : "Maintenance request updated successfully" });
+    res.json({
+      message:
+        action === "resolved"
+          ? "Maintenance request resolved successfully"
+          : "Maintenance request updated successfully",
+    });
   } catch (err) {
     console.error("UPDATE MAINTENANCE ERROR:", err);
     res.status(500).json({ error: err.message });

@@ -1,18 +1,16 @@
-const db = require("../config/db");
+const Category = require("../models/Category");
 
-// Get categories
-exports.getCategories = (req, res) => {
-  db.query("SELECT * FROM categories", (err, result) => {
-    if (err) {
-      console.error("GET CATEGORIES ERROR:", err);
-      return res.status(500).json({ error: "Failed to fetch categories" });
-    }
-    res.json(result);
-  });
+exports.getCategories = async (req, res) => {
+  try {
+    const categories = await Category.find({}, "-__v").lean();
+    res.json(categories.map(({ _id, ...c }) => ({ category_id: _id, ...c })));
+  } catch (err) {
+    console.error("GET CATEGORIES ERROR:", err);
+    res.status(500).json({ error: "Failed to fetch categories" });
+  }
 };
 
-// Add category
-exports.addCategory = (req, res) => {
+exports.addCategory = async (req, res) => {
   const categoryName = String(req.body.category_name || "").trim();
   const description = req.body.description ? String(req.body.description).trim() : null;
 
@@ -20,34 +18,31 @@ exports.addCategory = (req, res) => {
     return res.status(400).json({ error: "category_name is required" });
   }
 
-  db.query(
-    "INSERT INTO categories (category_name, description) VALUES (?, ?)",
-    [categoryName, description],
-    (err, result) => {
-      if (err) {
-        if (err.code === "ER_DUP_ENTRY") {
-          return res.status(409).json({ error: "Category already exists" });
-        }
-        console.error("ADD CATEGORY ERROR:", err);
-        return res.status(500).json({ error: "Failed to add category" });
-      }
-      res.status(201).json({ message: "Category added successfully" });
+  try {
+    await Category.create({ category_name: categoryName, description });
+    res.status(201).json({ message: "Category added successfully" });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ error: "Category already exists" });
     }
-  );
+    console.error("ADD CATEGORY ERROR:", err);
+    res.status(500).json({ error: "Failed to add category" });
+  }
 };
 
-// Delete category
-exports.deleteCategory = (req, res) => {
+exports.deleteCategory = async (req, res) => {
   const { id } = req.params;
-
-  db.query("DELETE FROM categories WHERE category_id = ?", [id], (err, result) => {
-    if (err) {
-      console.error("DELETE CATEGORY ERROR:", err);
-      return res.status(500).json({ error: "Failed to delete category" });
-    }
-    if (result.affectedRows === 0) {
+  try {
+    const result = await Category.findByIdAndDelete(id);
+    if (!result) {
       return res.status(404).json({ error: "Category not found" });
     }
     res.json({ message: "Category deleted successfully" });
-  });
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "Invalid category id" });
+    }
+    console.error("DELETE CATEGORY ERROR:", err);
+    res.status(500).json({ error: "Failed to delete category" });
+  }
 };

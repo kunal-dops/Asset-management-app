@@ -1,113 +1,92 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../config/db");
+const mongoose = require("mongoose");
+const AssetAssignment = require("../models/AssetAssignment");
+const Asset = require("../models/Asset");
 const requireRole = require("../middleware/roleMiddleware");
 
 // GET all assignments
-router.get("/", (req, res) => {
-  const sql = `
-    SELECT aa.*, a.asset_name, a.asset_tag, u.full_name
-    FROM asset_assignments aa
-    JOIN assets a ON aa.asset_id = a.asset_id
-    JOIN users u ON aa.user_id = u.user_id
-    ORDER BY aa.assignment_id DESC
-  `;
+router.get("/", async (req, res) => {
+  try {
+    const assignments = await AssetAssignment.find()
+      .populate("asset_id", "asset_name asset_tag")
+      .populate("user_id", "full_name")
+      .sort({ _id: -1 })
+      .lean();
 
-  db.query(sql, (err, result) => {
-    if (err) {
-      console.error("GET ASSIGNMENTS ERROR:", err);
-      return res.status(500).json({ error: err.message });
-    }
-    res.json(result);
-  });
+    res.json(
+      assignments.map(({ _id, asset_id, user_id, ...a }) => ({
+        assignment_id: _id,
+        asset_id: asset_id?._id || null,
+        user_id: user_id?._id || null,
+        asset_name: asset_id?.asset_name || null,
+        asset_tag: asset_id?.asset_tag || null,
+        full_name: user_id?.full_name || null,
+        ...a,
+      }))
+    );
+  } catch (err) {
+    console.error("GET ASSIGNMENTS ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ADD new assignment
-router.post("/", requireRole("admin", "technician"), (req, res) => {
+router.post("/", requireRole("admin", "technician"), async (req, res) => {
   const { asset_id, user_id, assigned_date, expected_return_date, remarks } = req.body;
 
   if (!asset_id || !user_id || !assigned_date) {
     return res.status(400).json({ error: "asset_id, user_id and assigned_date are required" });
   }
+  if (!mongoose.Types.ObjectId.isValid(asset_id) || !mongoose.Types.ObjectId.isValid(user_id)) {
+    return res.status(400).json({ error: "Invalid asset_id or user_id" });
+  }
 
-  const insertSql = `
-    INSERT INTO asset_assignments 
-    (asset_id, user_id, assigned_date, expected_return_date, remarks)
-    VALUES (?, ?, ?, ?, ?)
-  `;
+  try {
+    const assignment = await AssetAssignment.create({
+      asset_id,
+      user_id,
+      assigned_date,
+      expected_return_date: expected_return_date || null,
+      remarks: remarks || null,
+    });
 
-  db.query(
-    insertSql,
-    [asset_id, user_id, assigned_date, expected_return_date || null, remarks || null],
-    (err, result) => {
-      if (err) {
-        console.error("ADD ASSIGNMENT ERROR:", err);
-        return res.status(500).json({ error: err.message });
-      }
+    await Asset.findByIdAndUpdate(asset_id, { status: "assigned" });
 
-      const updateAssetSql = `
-        UPDATE assets SET status = 'assigned' WHERE asset_id = ?
-      `;
-
-      db.query(updateAssetSql, [asset_id], (updateErr) => {
-        if (updateErr) {
-          console.error("UPDATE ASSET STATUS ERROR:", updateErr);
-          return res.status(500).json({ error: updateErr.message });
-        }
-
-        res.json({ message: "Asset assigned successfully", result });
-      });
-    }
-  );
+    res.json({ message: "Asset assigned successfully", assignment_id: assignment._id });
+  } catch (err) {
+    console.error("ADD ASSIGNMENT ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // RETURN asset
-router.put("/return/:id", requireRole("admin", "technician"), (req, res) => {
+router.put("/return/:id", requireRole("admin", "technician"), async (req, res) => {
   const { id } = req.params;
   const { actual_return_date } = req.body;
 
-  const getAssignmentSql = `
-    SELECT asset_id FROM asset_assignments WHERE assignment_id = ?
-  `;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid assignment id" });
+  }
 
-  db.query(getAssignmentSql, [id], (err, rows) => {
-    if (err) {
-      console.error("GET ASSIGNMENT ERROR:", err);
-      return res.status(500).json({ error: err.message });
-    }
-
-    if (rows.length === 0) {
+  try {
+    const assignment = await AssetAssignment.findById(id);
+    if (!assignment) {
       return res.status(404).json({ error: "Assignment not found" });
     }
 
-    const assetId = rows[0].asset_id;
-
-    const updateAssignmentSql = `
-      UPDATE asset_assignments
-      SET actual_return_date = ?, assignment_status = 'returned'
-      WHERE assignment_id = ?
-    `;
-
-    db.query(updateAssignmentSql, [actual_return_date, id], (updateErr, result) => {
-      if (updateErr) {
-        console.error("RETURN ASSIGNMENT ERROR:", updateErr);
-        return res.status(500).json({ error: updateErr.message });
-      }
-
-      const updateAssetSql = `
-        UPDATE assets SET status = 'available' WHERE asset_id = ?
-      `;
-
-      db.query(updateAssetSql, [assetId], (assetErr) => {
-        if (assetErr) {
-          console.error("UPDATE ASSET RETURN STATUS ERROR:", assetErr);
-          return res.status(500).json({ error: assetErr.message });
-        }
-
-        res.json({ message: "Asset returned successfully", result });
-      });
+    await AssetAssignment.findByIdAndUpdate(id, {
+      actual_return_date: actual_return_date || null,
+      assignment_status: "returned",
     });
-  });
+
+    await Asset.findByIdAndUpdate(assignment.asset_id, { status: "available" });
+
+    res.json({ message: "Asset returned successfully" });
+  } catch (err) {
+    console.error("RETURN ASSIGNMENT ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

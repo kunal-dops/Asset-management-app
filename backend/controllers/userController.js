@@ -1,4 +1,4 @@
-const db = require("../config/db");
+const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 
 const VALID_ROLES = new Set(["admin", "technician", "user"]);
@@ -15,22 +15,17 @@ function normalizeUserInput(body) {
   };
 }
 
-// Get all users (never return passwords)
-exports.getUsers = (req, res) => {
-  db.query(
-    "SELECT user_id, full_name, email, role, department, phone, created_at FROM users",
-    (err, result) => {
-      if (err) {
-        console.error("GET USERS ERROR:", err);
-        return res.status(500).json({ error: "Failed to fetch users" });
-      }
-      res.json(result);
-    }
-  );
+exports.getUsers = async (req, res) => {
+  try {
+    const users = await User.find({}, "-password -__v").lean();
+    res.json(users.map(({ _id, ...u }) => ({ user_id: _id, ...u })));
+  } catch (err) {
+    console.error("GET USERS ERROR:", err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
 };
 
-// Add user with hashed password
-exports.addUser = (req, res) => {
+exports.addUser = async (req, res) => {
   const { full_name, email, password, role, department, phone } = normalizeUserInput(req.body);
 
   if (!full_name || !email || !password) {
@@ -43,31 +38,27 @@ exports.addUser = (req, res) => {
     return res.status(400).json({ error: "Password must be at least 8 characters" });
   }
 
-  const hashedPassword = bcrypt.hashSync(password, 10);
-
-  const sql = `
-    INSERT INTO users (full_name, email, password, role, department, phone)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `;
-
-  db.query(
-    sql,
-    [full_name, email, hashedPassword, role || "user", department || null, phone || null],
-    (err, result) => {
-      if (err) {
-        if (err.code === "ER_DUP_ENTRY") {
-          return res.status(409).json({ error: "Email already exists" });
-        }
-        console.error("ADD USER ERROR:", err);
-        return res.status(500).json({ error: "Failed to add user" });
-      }
-      res.status(201).json({ message: "User added successfully", user_id: result.insertId });
+  try {
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    const user = await User.create({
+      full_name,
+      email,
+      password: hashedPassword,
+      role: role || "user",
+      department,
+      phone,
+    });
+    res.status(201).json({ message: "User added successfully", user_id: user._id });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ error: "Email already exists" });
     }
-  );
+    console.error("ADD USER ERROR:", err);
+    res.status(500).json({ error: "Failed to add user" });
+  }
 };
 
-// Update user (no password update here — separate endpoint recommended)
-exports.updateUser = (req, res) => {
+exports.updateUser = async (req, res) => {
   const { id } = req.params;
   const { full_name, email, role, department, phone } = normalizeUserInput(req.body);
 
@@ -78,36 +69,34 @@ exports.updateUser = (req, res) => {
     return res.status(400).json({ error: "A valid email address is required" });
   }
 
-  const sql = `
-    UPDATE users
-    SET full_name = ?, email = ?, role = ?, department = ?, phone = ?
-    WHERE user_id = ?
-  `;
-
-  db.query(sql, [full_name, email, role, department, phone, id], (err, result) => {
-    if (err) {
-      console.error("UPDATE USER ERROR:", err);
-      return res.status(500).json({ error: "Failed to update user" });
-    }
-    if (result.affectedRows === 0) {
+  try {
+    const result = await User.findByIdAndUpdate(id, { full_name, email, role, department, phone });
+    if (!result) {
       return res.status(404).json({ error: "User not found" });
     }
     res.json({ message: "User updated successfully" });
-  });
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "Invalid user id" });
+    }
+    console.error("UPDATE USER ERROR:", err);
+    res.status(500).json({ error: "Failed to update user" });
+  }
 };
 
-// Delete user
-exports.deleteUser = (req, res) => {
+exports.deleteUser = async (req, res) => {
   const { id } = req.params;
-
-  db.query("DELETE FROM users WHERE user_id = ?", [id], (err, result) => {
-    if (err) {
-      console.error("DELETE USER ERROR:", err);
-      return res.status(500).json({ error: "Failed to delete user" });
-    }
-    if (result.affectedRows === 0) {
+  try {
+    const result = await User.findByIdAndDelete(id);
+    if (!result) {
       return res.status(404).json({ error: "User not found" });
     }
     res.json({ message: "User deleted successfully" });
-  });
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "Invalid user id" });
+    }
+    console.error("DELETE USER ERROR:", err);
+    res.status(500).json({ error: "Failed to delete user" });
+  }
 };
