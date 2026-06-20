@@ -333,7 +333,7 @@ const Assets = () => {
                 ) : filteredAssets.length > 0 ? (
                   filteredAssets.map((asset) => (
                     <tr key={asset.asset_id}>
-                      <td>{asset.asset_id}</td>
+                      <td>{`asset_${String(assets.findIndex(x => x.asset_id === asset.asset_id) + 1).padStart(2, "0")}`}</td>
                       <td>{asset.asset_name}</td>
                       <td>{asset.asset_tag}</td>
                       <td>{asset.category_name || "N/A"}</td>
