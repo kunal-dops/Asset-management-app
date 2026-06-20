@@ -145,7 +145,7 @@ const Categories = () => {
               ) : filtered.length > 0 ? (
                 filtered.map((c) => (
                   <tr key={c.category_id}>
-                    <td>{c.category_id}</td>
+                    <td>{`cat_${String(categories.findIndex(x => x.category_id === c.category_id) + 1).padStart(2, "0")}`}</td>
                     <td>{c.category_name}</td>
                     <td>{c.description || "—"}</td>
                     <td>
