@@ -141,6 +141,7 @@ const Users = () => {
           <table className="premium-table">
             <thead>
               <tr>
+                <th>ID</th>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
@@ -151,10 +152,11 @@ const Users = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="6" className="empty-state-cell">Loading users...</td></tr>
+                <tr><td colSpan="7" className="empty-state-cell">Loading users...</td></tr>
               ) : filtered.length > 0 ? (
                 filtered.map((u) => (
                   <tr key={u.user_id}>
+                    <td>{`user_${String(users.findIndex(x => x.user_id === u.user_id) + 1).padStart(2, "0")}`}</td>
                     <td>{u.full_name}</td>
                     <td>{u.email}</td>
                     <td><span className={`role-badge ${u.role}`}>{u.role}</span></td>
@@ -168,7 +170,7 @@ const Users = () => {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan="6" className="empty-state-cell">No users found</td></tr>
+                <tr><td colSpan="7" className="empty-state-cell">No users found</td></tr>
               )}
             </tbody>
           </table>
