@@ -65,7 +65,7 @@ const Dashboard = () => {
 
   return (
     <div>
-      <PageHeader title="Operational Dashboard" subtitle="Real-time insights into your IT assets" />
+      <PageHeader title="Dashboard" subtitle="Real-time insights into your IT assets" />
       {error ? <p className="text-danger mb-2">{error}</p> : null}
       <div style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <p style={{ margin: 0, color: "#64748b", fontSize: "0.9rem" }}>Last updated: {lastUpdated || "—"}</p>
