@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import PageHeader from "../components/PageHeader";
 import API, { getApiErrorMessage } from "../api";
+import useDarkMode from "../hooks/useDarkMode";
 import {
   FaBrain,
   FaChartLine,
@@ -135,6 +136,7 @@ const buildSmartInsights = (assets, maintenanceRequests, assignments) => {
 };
 
 const Reports = () => {
+  const dark = useDarkMode();
   const [stats, setStats] = useState({
     assets: 0,
     assignedAssets: 0,
@@ -413,38 +415,47 @@ const Reports = () => {
       </div>
 
       <div className="charts-grid">
-        <div className="chart-card">
-          <h3 style={{ marginBottom: "20px", fontWeight: 700 }}>Asset Status Distribution</h3>
-          {assetStatusData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie data={assetStatusData} dataKey="value" outerRadius={92} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {assetStatusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <p style={{ color: "#64748b", textAlign: "center", paddingTop: "90px" }}>No asset status data available</p>
-          )}
-        </div>
+        {(() => {
+          const axisColor = dark ? "#94a3b8" : "#64748b";
+          const tooltipStyle = dark ? { backgroundColor: "#1e293b", border: "1px solid #334155", color: "#e2e8f0" } : {};
+          return (
+            <>
+              <div className="chart-card">
+                <h3 style={{ marginBottom: "20px", fontWeight: 700, color: dark ? "#f1f5f9" : "#0f172a" }}>Asset Status Distribution</h3>
+                {assetStatusData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart>
+                      <Pie data={assetStatusData} dataKey="value" outerRadius={92} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        labelLine={{ stroke: axisColor }}>
+                        {assetStatusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip contentStyle={tooltipStyle} />
+                      <Legend formatter={(value) => <span style={{ color: axisColor }}>{value}</span>} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p style={{ color: axisColor, textAlign: "center", paddingTop: "90px" }}>No asset status data available</p>
+                )}
+              </div>
 
-        <div className="chart-card">
-          <h3 style={{ marginBottom: "20px", fontWeight: 700 }}>Maintenance Status Mix</h3>
-          {maintenanceStatusData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={maintenanceStatusData}>
-                <XAxis dataKey="name" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#2563eb" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <p style={{ color: "#64748b", textAlign: "center", paddingTop: "90px" }}>No maintenance data available</p>
-          )}
-        </div>
+              <div className="chart-card">
+                <h3 style={{ marginBottom: "20px", fontWeight: 700, color: dark ? "#f1f5f9" : "#0f172a" }}>Maintenance Status Mix</h3>
+                {maintenanceStatusData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={maintenanceStatusData}>
+                      <XAxis dataKey="name" tick={{ fill: axisColor }} axisLine={{ stroke: axisColor }} tickLine={{ stroke: axisColor }} />
+                      <YAxis allowDecimals={false} tick={{ fill: axisColor }} axisLine={{ stroke: axisColor }} tickLine={{ stroke: axisColor }} />
+                      <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: dark ? "#e2e8f0" : undefined }} />
+                      <Bar dataKey="value" fill="#2563eb" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p style={{ color: axisColor, textAlign: "center", paddingTop: "90px" }}>No maintenance data available</p>
+                )}
+              </div>
+            </>
+          );
+        })()}
       </div>
 
       <div className="page-card-pro">

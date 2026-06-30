@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import PageHeader from "../components/PageHeader";
 import API from "../api";
+import useDarkMode from "../hooks/useDarkMode";
 import {
   FaPlus, FaSync, FaBell, FaBellSlash, FaStop,
   FaCheckCircle, FaTools, FaTimes, FaSave,
@@ -268,15 +269,19 @@ const Maintenance = () => {
   const assignedToMe = requests.filter(r => String(r.technician_id || "") === String(storedUser.user_id || "") && r.status !== "resolved").length;
   const unassignedPending = requests.filter(r => !r.technician_id && r.status === "pending").length;
 
+  const dark = useDarkMode();
+
   const inputStyle = {
-    width: "100%", padding: "9px 12px", border: "1px solid #d1d5db",
-    borderRadius: "8px", fontSize: "0.88rem", color: "#0f172a",
-    background: "#fff", outline: "none",
+    width: "100%", padding: "9px 12px",
+    border: `1px solid ${dark ? "#334155" : "#d1d5db"}`,
+    borderRadius: "8px", fontSize: "0.88rem",
+    color: dark ? "#e2e8f0" : "#0f172a",
+    background: dark ? "#1e293b" : "#fff", outline: "none",
   };
 
   const labelStyle = {
     display: "block", fontWeight: 600, marginBottom: "5px",
-    color: "#374151", fontSize: "0.83rem",
+    color: dark ? "#94a3b8" : "#374151", fontSize: "0.83rem",
   };
 
   return (
@@ -290,8 +295,8 @@ const Maintenance = () => {
         marginBottom: "18px",
       }}>
         <div style={{
-          background: canManageRequests ? "#eff6ff" : "#f8fafc",
-          border: `1px solid ${canManageRequests ? "#bfdbfe" : "#e2e8f0"}`,
+          background: dark ? "#1e293b" : (canManageRequests ? "#eff6ff" : "#f8fafc"),
+          border: `1px solid ${dark ? "#334155" : (canManageRequests ? "#bfdbfe" : "#e2e8f0")}`,
           borderRadius: "14px",
           padding: "16px",
           display: "flex",
@@ -300,17 +305,17 @@ const Maintenance = () => {
         }}>
           <div style={{
             width: "42px", height: "42px", borderRadius: "12px",
-            background: canManageRequests ? "#dbeafe" : "#f1f5f9",
+            background: dark ? "#1e3a5f" : (canManageRequests ? "#dbeafe" : "#f1f5f9"),
             color: canManageRequests ? "#2563eb" : "#64748b",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             {canManageRequests ? <FaShieldAlt /> : <FaLock />}
           </div>
           <div>
-            <p style={{ margin: 0, fontWeight: 800, color: "#0f172a" }}>
+            <p style={{ margin: 0, fontWeight: 800, color: dark ? "#f1f5f9" : "#0f172a" }}>
               {canManageRequests ? "Workflow Manager Access" : "Requester Access"}
             </p>
-            <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "0.86rem" }}>
+            <p style={{ margin: "4px 0 0", color: dark ? "#94a3b8" : "#64748b", fontSize: "0.86rem" }}>
               {canManageRequests
                 ? "You can assign, edit, resolve, and review request history."
                 : "You can create and track only your own requests."}
@@ -318,22 +323,22 @@ const Maintenance = () => {
           </div>
         </div>
 
-        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "16px" }}>
-          <p style={{ margin: 0, color: "#64748b", fontSize: "0.82rem", fontWeight: 700 }}>Open Work Queue</p>
-          <h3 style={{ margin: "6px 0 0", color: "#0f172a", fontSize: "1.6rem" }}>{counts.pending + counts.in_progress}</h3>
+        <div style={{ background: dark ? "#1e293b" : "#fff", border: `1px solid ${dark ? "#334155" : "#e2e8f0"}`, borderRadius: "14px", padding: "16px" }}>
+          <p style={{ margin: 0, color: dark ? "#94a3b8" : "#64748b", fontSize: "0.82rem", fontWeight: 700 }}>Open Work Queue</p>
+          <h3 style={{ margin: "6px 0 0", color: dark ? "#f1f5f9" : "#0f172a", fontSize: "1.6rem" }}>{counts.pending + counts.in_progress}</h3>
         </div>
-        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "16px" }}>
-          <p style={{ margin: 0, color: "#64748b", fontSize: "0.82rem", fontWeight: 700 }}>
+        <div style={{ background: dark ? "#1e293b" : "#fff", border: `1px solid ${dark ? "#334155" : "#e2e8f0"}`, borderRadius: "14px", padding: "16px" }}>
+          <p style={{ margin: 0, color: dark ? "#94a3b8" : "#64748b", fontSize: "0.82rem", fontWeight: 700 }}>
             {canManageRequests ? "Unassigned Pending" : "Your Active Requests"}
           </p>
-          <h3 style={{ margin: "6px 0 0", color: "#0f172a", fontSize: "1.6rem" }}>
+          <h3 style={{ margin: "6px 0 0", color: dark ? "#f1f5f9" : "#0f172a", fontSize: "1.6rem" }}>
             {canManageRequests ? unassignedPending : counts.pending + counts.in_progress}
           </h3>
         </div>
         {canManageRequests && (
-          <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "16px" }}>
-            <p style={{ margin: 0, color: "#64748b", fontSize: "0.82rem", fontWeight: 700 }}>Assigned To Me</p>
-            <h3 style={{ margin: "6px 0 0", color: "#0f172a", fontSize: "1.6rem" }}>{assignedToMe}</h3>
+          <div style={{ background: dark ? "#1e293b" : "#fff", border: `1px solid ${dark ? "#334155" : "#e2e8f0"}`, borderRadius: "14px", padding: "16px" }}>
+            <p style={{ margin: 0, color: dark ? "#94a3b8" : "#64748b", fontSize: "0.82rem", fontWeight: 700 }}>Assigned To Me</p>
+            <h3 style={{ margin: "6px 0 0", color: dark ? "#f1f5f9" : "#0f172a", fontSize: "1.6rem" }}>{assignedToMe}</h3>
           </div>
         )}
       </div>
@@ -342,9 +347,11 @@ const Maintenance = () => {
       {flash && (
         <div style={{
           padding: "12px 18px", borderRadius: "10px", marginBottom: "16px",
-          background: flash.type === "success" ? "#f0fdf4" : "#fef2f2",
-          border: `1px solid ${flash.type === "success" ? "#bbf7d0" : "#fecaca"}`,
-          color: flash.type === "success" ? "#15803d" : "#dc2626",
+          background: dark
+            ? (flash.type === "success" ? "#0f2820" : "#2d1515")
+            : (flash.type === "success" ? "#f0fdf4" : "#fef2f2"),
+          border: `1px solid ${flash.type === "success" ? (dark ? "#16532d" : "#bbf7d0") : (dark ? "#7f1d1d" : "#fecaca")}`,
+          color: flash.type === "success" ? (dark ? "#4ade80" : "#15803d") : (dark ? "#fca5a5" : "#dc2626"),
           display: "flex", alignItems: "center", gap: "10px", fontWeight: 600,
         }}>
           {flash.type === "success" ? <FaCheckCircle /> : <FaExclamationTriangle />}
@@ -355,8 +362,11 @@ const Maintenance = () => {
       {/* NEW FORM — slides in from top */}
       {showForm && (
         <div style={{
-          background: "#fff", borderRadius: "16px", border: "1px solid #e2e8f0",
-          boxShadow: "0 8px 32px rgba(15,23,42,0.1)", marginBottom: "24px",
+          background: dark ? "#1e293b" : "#fff",
+          borderRadius: "16px",
+          border: `1px solid ${dark ? "#334155" : "#e2e8f0"}`,
+          boxShadow: dark ? "0 8px 32px rgba(0,0,0,0.4)" : "0 8px 32px rgba(15,23,42,0.1)",
+          marginBottom: "24px",
           overflow: "hidden",
         }}>
           {/* Form Header */}
@@ -406,12 +416,12 @@ const Maintenance = () => {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "16px", marginBottom: "16px" }}>
               <div>
                 <label style={labelStyle}>Request No.</label>
-                <input style={{ ...inputStyle, background: "#f8fafc", color: "#94a3b8" }}
+                <input style={{ ...inputStyle, background: dark ? "#162032" : "#f8fafc", color: "#94a3b8" }}
                   value={form.sr_number} disabled />
               </div>
               <div>
                 <label style={labelStyle}>Request Status</label>
-                <input style={{ ...inputStyle, background: "#fffbeb", color: "#f59e0b", fontWeight: 700 }}
+                <input style={{ ...inputStyle, background: dark ? "#2d2006" : "#fffbeb", color: "#f59e0b", fontWeight: 700 }}
                   value="Pending" disabled />
               </div>
               <div>
