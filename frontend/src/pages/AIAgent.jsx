@@ -239,6 +239,7 @@ export default function AIAgent() {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const [assets, setAssets] = useState([]);
   const [users, setUsers] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -291,7 +292,10 @@ export default function AIAgent() {
   }, [fetchWorkflowData]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, [messages, thinking]);
 
   useEffect(() => {
@@ -607,7 +611,7 @@ export default function AIAgent() {
             ))}
           </div>
 
-          <div className="agent-messages">
+          <div className="agent-messages" ref={messagesContainerRef}>
             {messages.map((message, index) => {
               const style = severityStyles[message.severity] || severityStyles.Normal;
               return (
