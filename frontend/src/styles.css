@@ -1490,26 +1490,30 @@ body.compact-table-density .role-badge {
 .agent-input-row div svg {
   position: absolute;
   left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 14px;
   color: #94a3b8;
   pointer-events: none;
 }
 
-.agent-input-row input {
+.agent-input-row textarea {
   width: 100%;
-  height: 48px;
+  min-height: 48px;
+  max-height: 120px;
   border: 1.5px solid #e2e8f0;
   border-radius: 16px;
-  padding: 0 14px 0 42px;
+  padding: 13px 14px 13px 42px;
   outline: none;
   color: #0f172a;
   background: #f8fafc;
   font-size: 0.88rem;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: none;
+  overflow-y: auto;
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 
-.agent-input-row input:focus {
+.agent-input-row textarea:focus {
   border-color: #2563eb;
   background: #ffffff;
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.09);
@@ -1521,6 +1525,7 @@ body.compact-table-density .role-badge {
   justify-content: center;
   gap: 7px;
   height: 48px;
+  align-self: flex-end;
   border: none;
   border-radius: 16px;
   background: linear-gradient(135deg, #2563eb, #4f46e5);

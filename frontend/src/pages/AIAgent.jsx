@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageHeader from "../components/PageHeader";
 import API, { getApiErrorMessage } from "../api";
 import {
@@ -238,6 +238,7 @@ const severityStyles = {
 export default function AIAgent() {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
+  const messagesEndRef = useRef(null);
   const [assets, setAssets] = useState([]);
   const [users, setUsers] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -288,6 +289,10 @@ export default function AIAgent() {
   useEffect(() => {
     fetchWorkflowData();
   }, [fetchWorkflowData]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, thinking]);
 
   useEffect(() => {
     if (loadingData || requestPromptShown) return;
@@ -523,6 +528,13 @@ export default function AIAgent() {
     sendMessage();
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage();
+    }
+  };
+
   const createRequest = async (event) => {
     event.preventDefault();
     if (!requestForm.asset_id || !requestForm.issue_description?.trim()) {
@@ -690,15 +702,22 @@ export default function AIAgent() {
                 </div>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
 
           <form className="agent-input-row" onSubmit={handleSubmit}>
             <div>
               <FaSearch />
-              <input
+              <textarea
                 value={input}
-                onChange={(event) => setInput(event.target.value)}
-                placeholder="Example: User cannot login to assigned laptop and gets unauthorized error"
+                rows={1}
+                onChange={(event) => {
+                  setInput(event.target.value);
+                  event.target.style.height = "auto";
+                  event.target.style.height = Math.min(event.target.scrollHeight, 120) + "px";
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder="Describe the problem… (Enter to send, Shift+Enter for new line)"
               />
             </div>
             <button type="submit" disabled={thinking}>
