@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import "./styles.css";
 
@@ -18,6 +18,14 @@ import Layout from "./components/Layout";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
+  useEffect(() => {
+    try {
+      const prefs = JSON.parse(localStorage.getItem("app_preferences")) || {};
+      document.body.classList.toggle("dark-mode", Boolean(prefs.darkMode));
+      document.body.classList.toggle("compact-table-density", Boolean(prefs.compactTables));
+    } catch {}
+  }, []);
+
   return (
     <Router>
       <Routes>

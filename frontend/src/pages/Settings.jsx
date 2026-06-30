@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   FaCheckCircle,
   FaExclamationCircle,
+  FaMoon,
   FaShieldAlt,
   FaSignOutAlt,
   FaSyncAlt,
@@ -87,6 +88,10 @@ export default function Settings() {
       "compact-table-density",
       Boolean(preferences.compactTables)
     );
+    document.body.classList.toggle(
+      "dark-mode",
+      Boolean(preferences.darkMode)
+    );
     localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));
   }, [preferences]);
 
@@ -169,6 +174,13 @@ export default function Settings() {
             </div>
           </div>
 
+          <Toggle
+            icon={<FaMoon />}
+            label="Dark mode"
+            description="Switch the entire app to a dark colour scheme."
+            checked={Boolean(preferences.darkMode)}
+            onChange={updatePreference("darkMode")}
+          />
           <Toggle
             icon={<FaTable />}
             label="Compact table density"
