@@ -611,94 +611,102 @@ export default function AIAgent() {
             {messages.map((message, index) => {
               const style = severityStyles[message.severity] || severityStyles.Normal;
               return (
-                <div key={`${message.type}-${index}`} className={`agent-message ${message.type}`}>
-                  {message.type === "agent" ? (
-                    <>
-                      <div className="agent-message-header">
-                        <span>{message.category}</span>
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          {message.source === "claude" && (
-                            <span style={{ fontSize: "10px", fontWeight: 600, background: "#7c3aed", color: "#fff", borderRadius: "4px", padding: "2px 6px", letterSpacing: "0.03em" }}>
-                              Claude AI
-                            </span>
-                          )}
-                          <strong style={{ background: style.bg, color: style.color, borderColor: style.border }}>
-                            {message.severity}
-                          </strong>
-                        </div>
-                      </div>
-                      <p>{message.text}</p>
-                      {Number.isFinite(message.confidence) && message.confidence > 0 && (
-                        <div className="agent-confidence-bar">
-                          <div className="agent-confidence-bar-label">
-                            <span>Confidence</span>
-                            <strong>{message.confidence}%</strong>
-                          </div>
-                          <div className="agent-confidence-bar-track">
-                            <div className="agent-confidence-bar-fill" style={{ width: `${message.confidence}%` }} />
-                          </div>
-                        </div>
-                      )}
-                      {message.cause && (
-                        <div className="agent-cause-box">
-                          <strong>Problem</strong>
-                          <span>{message.cause}</span>
-                        </div>
-                      )}
-                      <div className="agent-solution-box">
-                        <strong>Try this</strong>
-                        <ol>
-                          {(message.solutionSteps || []).map((step) => (
-                            <li key={step}>{step}</li>
-                          ))}
-                        </ol>
-                      </div>
-                      {message.followUpQuestion && (
-                        <div className="agent-followup-box">
-                          <FaRobot />
-                          <span>{message.followUpQuestion}</span>
-                        </div>
-                      )}
-                      {message.resolutionNote && (
-                        <div className="agent-resolution-box">
-                          <div className="agent-resolution-title">
-                            <strong>Note</strong>
-                            <button type="button" onClick={() => copyResolutionNote(message.resolutionNote)} title="Copy note">
-                              <FaCopy />
-                            </button>
-                          </div>
-                          <p>{message.resolutionNote}</p>
-                        </div>
-                      )}
-                      {message.nextAction && (
-                      <div className="agent-next-action compact">
-                        <FaClipboardList />
-                        <span>{message.nextAction}</span>
-                      </div>
-                      )}
-                      {message.quickReplies?.length > 0 && (
-                        <div className="agent-quick-replies">
-                          {message.quickReplies.slice(0, 3).map((reply) => (
-                            <button key={reply} type="button" onClick={() => sendMessage(reply)}>
-                              {reply}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <p>{message.text}</p>
+                <div key={`${message.type}-${index}`} className={`agent-message-row ${message.type}`}>
+                  {message.type === "agent" && (
+                    <div className="agent-msg-avatar"><FaRobot /></div>
                   )}
+                  <div className={`agent-message ${message.type}`}>
+                    {message.type === "agent" ? (
+                      <>
+                        <div className="agent-message-header">
+                          <span>{message.category}</span>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            {message.source === "claude" && (
+                              <span style={{ fontSize: "10px", fontWeight: 600, background: "#7c3aed", color: "#fff", borderRadius: "4px", padding: "2px 6px", letterSpacing: "0.03em" }}>
+                                Claude AI
+                              </span>
+                            )}
+                            <strong style={{ background: style.bg, color: style.color, borderColor: style.border }}>
+                              {message.severity}
+                            </strong>
+                          </div>
+                        </div>
+                        <p>{message.text}</p>
+                        {Number.isFinite(message.confidence) && message.confidence > 0 && (
+                          <div className="agent-confidence-bar">
+                            <div className="agent-confidence-bar-label">
+                              <span>Confidence</span>
+                              <strong>{message.confidence}%</strong>
+                            </div>
+                            <div className="agent-confidence-bar-track">
+                              <div className="agent-confidence-bar-fill" style={{ width: `${message.confidence}%` }} />
+                            </div>
+                          </div>
+                        )}
+                        {message.cause && (
+                          <div className="agent-cause-box">
+                            <strong>Problem</strong>
+                            <span>{message.cause}</span>
+                          </div>
+                        )}
+                        <div className="agent-solution-box">
+                          <strong>Try this</strong>
+                          <ol>
+                            {(message.solutionSteps || []).map((step) => (
+                              <li key={step}>{step}</li>
+                            ))}
+                          </ol>
+                        </div>
+                        {message.followUpQuestion && (
+                          <div className="agent-followup-box">
+                            <FaRobot />
+                            <span>{message.followUpQuestion}</span>
+                          </div>
+                        )}
+                        {message.resolutionNote && (
+                          <div className="agent-resolution-box">
+                            <div className="agent-resolution-title">
+                              <strong>Note</strong>
+                              <button type="button" onClick={() => copyResolutionNote(message.resolutionNote)} title="Copy note">
+                                <FaCopy />
+                              </button>
+                            </div>
+                            <p>{message.resolutionNote}</p>
+                          </div>
+                        )}
+                        {message.nextAction && (
+                          <div className="agent-next-action compact">
+                            <FaClipboardList />
+                            <span>{message.nextAction}</span>
+                          </div>
+                        )}
+                        {message.quickReplies?.length > 0 && (
+                          <div className="agent-quick-replies">
+                            {message.quickReplies.slice(0, 3).map((reply) => (
+                              <button key={reply} type="button" onClick={() => sendMessage(reply)}>
+                                {reply}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p>{message.text}</p>
+                    )}
+                  </div>
                 </div>
               );
             })}
             {thinking && (
-              <div className="agent-message agent">
-                <div className="agent-thinking">
-                  <span />
-                  <span />
-                  <span />
-                  {messages.some(m => m.source === "claude") ? "Claude AI is thinking..." : "Technician is thinking..."}
+              <div className="agent-message-row agent">
+                <div className="agent-msg-avatar"><FaRobot /></div>
+                <div className="agent-message agent">
+                  <div className="agent-thinking">
+                    <span />
+                    <span />
+                    <span />
+                    {messages.some(m => m.source === "claude") ? "Claude AI is thinking..." : "Technician is thinking..."}
+                  </div>
                 </div>
               </div>
             )}
