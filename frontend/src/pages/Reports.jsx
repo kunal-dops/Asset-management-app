@@ -320,7 +320,7 @@ const Reports = () => {
               <FaBrain style={{ color: "#2563eb" }} />
               Smart Insights
             </h3>
-            <p style={{ margin: "6px 0 0", color: "#64748b", fontSize: "0.9rem" }}>
+            <p style={{ margin: "6px 0 0", color: dark ? "#94a3b8" : "#64748b", fontSize: "0.9rem" }}>
               Rule-based AI-style analysis generated from current asset, maintenance, and assignment data.
             </p>
           </div>
@@ -328,76 +328,78 @@ const Reports = () => {
             minWidth: "150px",
             padding: "14px 18px",
             borderRadius: "16px",
-            background: smartInsights.healthScore >= 75 ? "#ecfdf5" : smartInsights.healthScore >= 45 ? "#fffbeb" : "#fef2f2",
-            border: `1px solid ${smartInsights.healthScore >= 75 ? "#bbf7d0" : smartInsights.healthScore >= 45 ? "#fde68a" : "#fecaca"}`,
+            background: dark
+              ? (smartInsights.healthScore >= 75 ? "#0f2820" : smartInsights.healthScore >= 45 ? "#1c1408" : "#1f0a0a")
+              : (smartInsights.healthScore >= 75 ? "#ecfdf5" : smartInsights.healthScore >= 45 ? "#fffbeb" : "#fef2f2"),
+            border: `1px solid ${smartInsights.healthScore >= 75 ? (dark ? "#166534" : "#bbf7d0") : smartInsights.healthScore >= 45 ? (dark ? "#713f12" : "#fde68a") : (dark ? "#7f1d1d" : "#fecaca")}`,
           }}>
-            <p style={{ margin: 0, color: "#64748b", fontSize: "0.8rem", fontWeight: 700 }}>Health Score</p>
-            <h2 style={{ margin: "4px 0 0", color: "#0f172a", fontSize: "2rem" }}>{smartInsights.healthScore}%</h2>
+            <p style={{ margin: 0, color: dark ? "#94a3b8" : "#64748b", fontSize: "0.8rem", fontWeight: 700 }}>Health Score</p>
+            <h2 style={{ margin: "4px 0 0", color: dark ? "#f1f5f9" : "#0f172a", fontSize: "2rem" }}>{smartInsights.healthScore}%</h2>
           </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "16px", marginBottom: "22px" }}>
-          <div style={{ border: "1px solid #e2e8f0", borderRadius: "16px", padding: "18px", background: "#fff" }}>
-            <h4 style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ border: `1px solid ${dark ? "#334155" : "#e2e8f0"}`, borderRadius: "16px", padding: "18px", background: dark ? "#1e293b" : "#fff" }}>
+            <h4 style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: "8px", color: dark ? "#f1f5f9" : undefined }}>
               <FaExclamationTriangle style={{ color: "#dc2626" }} /> High Risk Assets
             </h4>
             {smartInsights.riskAssets.length > 0 ? smartInsights.riskAssets.slice(0, 3).map((asset) => (
-              <div key={asset.assetId} style={{ padding: "10px 0", borderTop: "1px solid #f1f5f9" }}>
-                <strong>{asset.assetName}</strong>
-                <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "0.86rem" }}>
+              <div key={asset.assetId} style={{ padding: "10px 0", borderTop: `1px solid ${dark ? "#253048" : "#f1f5f9"}` }}>
+                <strong style={{ color: dark ? "#e2e8f0" : undefined }}>{asset.assetName}</strong>
+                <p style={{ margin: "4px 0 0", color: dark ? "#94a3b8" : "#64748b", fontSize: "0.86rem" }}>
                   Score {asset.score} - {asset.open} open, {asset.total} total requests
                 </p>
               </div>
             )) : (
-              <p style={{ margin: 0, color: "#64748b" }}>No risky assets detected.</p>
+              <p style={{ margin: 0, color: dark ? "#94a3b8" : "#64748b" }}>No risky assets detected.</p>
             )}
           </div>
 
-          <div style={{ border: "1px solid #e2e8f0", borderRadius: "16px", padding: "18px", background: "#fff" }}>
-            <h4 style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ border: `1px solid ${dark ? "#334155" : "#e2e8f0"}`, borderRadius: "16px", padding: "18px", background: dark ? "#1e293b" : "#fff" }}>
+            <h4 style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: "8px", color: dark ? "#f1f5f9" : undefined }}>
               <FaChartLine style={{ color: "#7c3aed" }} /> Repeated Maintenance
             </h4>
             {smartInsights.repeatedMaintenance.length > 0 ? smartInsights.repeatedMaintenance.slice(0, 3).map((asset) => (
-              <div key={asset.assetId} style={{ padding: "10px 0", borderTop: "1px solid #f1f5f9" }}>
-                <strong>{asset.assetName}</strong>
-                <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "0.86rem" }}>
+              <div key={asset.assetId} style={{ padding: "10px 0", borderTop: `1px solid ${dark ? "#253048" : "#f1f5f9"}` }}>
+                <strong style={{ color: dark ? "#e2e8f0" : undefined }}>{asset.assetName}</strong>
+                <p style={{ margin: "4px 0 0", color: dark ? "#94a3b8" : "#64748b", fontSize: "0.86rem" }}>
                   {asset.total} requests, latest {asset.latestDate || "not dated"}
                 </p>
               </div>
             )) : (
-              <p style={{ margin: 0, color: "#64748b" }}>No repeated maintenance pattern found.</p>
+              <p style={{ margin: 0, color: dark ? "#94a3b8" : "#64748b" }}>No repeated maintenance pattern found.</p>
             )}
           </div>
 
-          <div style={{ border: "1px solid #e2e8f0", borderRadius: "16px", padding: "18px", background: "#fff" }}>
-            <h4 style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ border: `1px solid ${dark ? "#334155" : "#e2e8f0"}`, borderRadius: "16px", padding: "18px", background: dark ? "#1e293b" : "#fff" }}>
+            <h4 style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: "8px", color: dark ? "#f1f5f9" : undefined }}>
               <FaExclamationTriangle style={{ color: "#f59e0b" }} /> Overdue Returns
             </h4>
             {smartInsights.overdueAssignments.length > 0 ? smartInsights.overdueAssignments.slice(0, 3).map((assignment) => (
-              <div key={assignment.id} style={{ padding: "10px 0", borderTop: "1px solid #f1f5f9" }}>
-                <strong>{assignment.assetName}</strong>
-                <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "0.86rem" }}>
+              <div key={assignment.id} style={{ padding: "10px 0", borderTop: `1px solid ${dark ? "#253048" : "#f1f5f9"}` }}>
+                <strong style={{ color: dark ? "#e2e8f0" : undefined }}>{assignment.assetName}</strong>
+                <p style={{ margin: "4px 0 0", color: dark ? "#94a3b8" : "#64748b", fontSize: "0.86rem" }}>
                   {assignment.userName} - due {assignment.expectedReturnDate}
                 </p>
               </div>
             )) : (
-              <p style={{ margin: 0, color: "#64748b" }}>No overdue active returns.</p>
+              <p style={{ margin: 0, color: dark ? "#94a3b8" : "#64748b" }}>No overdue active returns.</p>
             )}
           </div>
         </div>
 
-        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "18px" }}>
-          <h4 style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ background: dark ? "#162032" : "#f8fafc", border: `1px solid ${dark ? "#334155" : "#e2e8f0"}`, borderRadius: "16px", padding: "18px" }}>
+          <h4 style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: "8px", color: dark ? "#f1f5f9" : undefined }}>
             <FaLightbulb style={{ color: "#16a34a" }} /> Recommendations
           </h4>
           <div style={{ display: "grid", gap: "10px" }}>
             {smartInsights.recommendations.map((item, index) => (
-              <div key={item} style={{ display: "flex", gap: "10px", alignItems: "flex-start", color: "#334155" }}>
+              <div key={item} style={{ display: "flex", gap: "10px", alignItems: "flex-start", color: dark ? "#cbd5e1" : "#334155" }}>
                 <span style={{
                   minWidth: "26px",
                   height: "26px",
                   borderRadius: "8px",
-                  background: "#eff6ff",
+                  background: dark ? "#1e3a5f" : "#eff6ff",
                   color: "#2563eb",
                   display: "inline-flex",
                   alignItems: "center",

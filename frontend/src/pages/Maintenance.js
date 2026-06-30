@@ -271,6 +271,24 @@ const Maintenance = () => {
 
   const dark = useDarkMode();
 
+  const dm = {
+    card:        dark ? "#1e293b" : "#fff",
+    cardBorder:  dark ? "#334155" : "#e2e8f0",
+    bg:          dark ? "#162032" : "#f8fafc",
+    text:        dark ? "#f1f5f9" : "#0f172a",
+    textMuted:   dark ? "#94a3b8" : "#64748b",
+    textBody:    dark ? "#e2e8f0" : "#334155",
+    textSub:     dark ? "#cbd5e1" : "#475569",
+    rowEven:     dark ? "#1e293b" : "#fff",
+    rowOdd:      dark ? "#162032" : "#fafafa",
+    rowBorder:   dark ? "#253048" : "#f1f5f9",
+    rowHover:    dark ? "#1a2d44" : "#f0f9ff",
+    tabInactive: dark ? "#253048" : "#f1f5f9",
+    tabText:     dark ? "#94a3b8" : "#64748b",
+    filterBg:    dark ? "#162032" : "#f8fafc",
+    filterBorder:dark ? "#334155" : "#d1d5db",
+  };
+
   const inputStyle = {
     width: "100%", padding: "9px 12px",
     border: `1px solid ${dark ? "#334155" : "#d1d5db"}`,
@@ -517,8 +535,8 @@ const Maintenance = () => {
 
       {canManageRequests && editingRequest && editForm && (
         <div style={{
-          background: "#fff", borderRadius: "16px", border: "1px solid #bfdbfe",
-          boxShadow: "0 8px 32px rgba(37,99,235,0.12)", marginBottom: "24px",
+          background: dm.card, borderRadius: "16px", border: `1px solid ${dark ? "#334155" : "#bfdbfe"}`,
+          boxShadow: dark ? "0 8px 32px rgba(0,0,0,0.4)" : "0 8px 32px rgba(37,99,235,0.12)", marginBottom: "24px",
           overflow: "hidden",
         }}>
           <div style={{
@@ -650,17 +668,17 @@ const Maintenance = () => {
 
       {canManageRequests && auditRequest && (
         <div style={{
-          background: "#fff", borderRadius: "16px", border: "1px solid #e2e8f0",
-          boxShadow: "0 8px 32px rgba(15,23,42,0.08)", marginBottom: "24px",
+          background: dm.card, borderRadius: "16px", border: `1px solid ${dm.cardBorder}`,
+          boxShadow: dark ? "0 8px 32px rgba(0,0,0,0.4)" : "0 8px 32px rgba(15,23,42,0.08)", marginBottom: "24px",
           overflow: "hidden",
         }}>
           <div style={{
             padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center",
-            borderBottom: "1px solid #e2e8f0", background: "#f8fafc",
+            borderBottom: `1px solid ${dm.cardBorder}`, background: dm.bg,
           }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800 }}>Edit History</h3>
-              <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "0.86rem" }}>
+              <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: dm.text }}>Edit History</h3>
+              <p style={{ margin: "4px 0 0", color: dm.textMuted, fontSize: "0.86rem" }}>
                 {auditRequest.sr_number || `SR-${String(auditRequest.request_id).slice(-5).toUpperCase()}`} - who edited, assigned, checked, or resolved the request
               </p>
             </div>
@@ -670,35 +688,35 @@ const Maintenance = () => {
           </div>
           <div style={{ padding: "18px 24px" }}>
             {auditLoading ? (
-              <p style={{ color: "#64748b" }}>Loading history...</p>
+              <p style={{ color: dm.textMuted }}>Loading history...</p>
             ) : auditRows.length > 0 ? (
               <div style={{ display: "grid", gap: "12px" }}>
                 {auditRows.map(row => {
                   let changes = {};
                   try { changes = JSON.parse(row.changes_json || "{}"); } catch { changes = {}; }
                   return (
-                    <div key={row.audit_id} style={{ border: "1px solid #e2e8f0", borderRadius: "12px", padding: "14px", background: "#fff" }}>
+                    <div key={row.audit_id} style={{ border: `1px solid ${dm.cardBorder}`, borderRadius: "12px", padding: "14px", background: dm.card }}>
                       <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginBottom: "8px" }}>
-                        <strong style={{ textTransform: "capitalize", color: "#0f172a" }}>{row.action.replace("_", " ")}</strong>
-                        <span style={{ color: "#64748b", fontSize: "0.82rem" }}>{new Date(row.created_at).toLocaleString()}</span>
+                        <strong style={{ textTransform: "capitalize", color: dm.text }}>{row.action.replace("_", " ")}</strong>
+                        <span style={{ color: dm.textMuted, fontSize: "0.82rem" }}>{new Date(row.created_at).toLocaleString()}</span>
                       </div>
-                      <p style={{ margin: "0 0 8px", color: "#475569", fontSize: "0.86rem" }}>
+                      <p style={{ margin: "0 0 8px", color: dm.textSub, fontSize: "0.86rem" }}>
                         By: <strong>{row.edited_by_name || "System/User"}</strong> {row.edited_role ? `(${row.edited_role})` : ""}
                       </p>
-                      {row.notes ? <p style={{ margin: "0 0 8px", color: "#64748b", fontSize: "0.86rem" }}>{row.notes}</p> : null}
+                      {row.notes ? <p style={{ margin: "0 0 8px", color: dm.textMuted, fontSize: "0.86rem" }}>{row.notes}</p> : null}
                       <div style={{ display: "grid", gap: "6px" }}>
                         {Object.entries(changes).length > 0 ? Object.entries(changes).map(([field, value]) => (
-                          <p key={field} style={{ margin: 0, color: "#334155", fontSize: "0.84rem" }}>
+                          <p key={field} style={{ margin: 0, color: dm.textBody, fontSize: "0.84rem" }}>
                             <strong>{field.replaceAll("_", " ")}:</strong> {String(value.from ?? "-")} -> {String(value.to ?? "-")}
                           </p>
-                        )) : <p style={{ margin: 0, color: "#94a3b8", fontSize: "0.84rem" }}>No field-level changes captured.</p>}
+                        )) : <p style={{ margin: 0, color: dark ? "#64748b" : "#94a3b8", fontSize: "0.84rem" }}>No field-level changes captured.</p>}
                       </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <p style={{ color: "#64748b" }}>No edit history available for this request yet.</p>
+              <p style={{ color: dm.textMuted }}>No edit history available for this request yet.</p>
             )}
           </div>
         </div>
@@ -706,9 +724,9 @@ const Maintenance = () => {
 
       {/* Controls Bar */}
       <div style={{
-        background: "#fff", borderRadius: "16px", border: "1px solid #e2e8f0",
+        background: dm.card, borderRadius: "16px", border: `1px solid ${dm.cardBorder}`,
         padding: "16px 20px", marginBottom: "20px",
-        boxShadow: "0 2px 8px rgba(15,23,42,0.05)",
+        boxShadow: dark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 8px rgba(15,23,42,0.05)",
       }}>
         {/* Top row */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "14px" }}>
@@ -750,7 +768,7 @@ const Maintenance = () => {
                 display: "flex", alignItems: "center", gap: "7px",
                 padding: "9px 16px", borderRadius: "9px",
                 border: `1px solid ${soundAlerts ? "#f59e0b" : "#d1d5db"}`,
-                background: soundAlerts ? "#fffbeb" : "#f8fafc",
+                background: soundAlerts ? (dark ? "#2d1e06" : "#fffbeb") : dm.bg,
                 color: soundAlerts ? "#d97706" : "#94a3b8",
                 fontWeight: 700, cursor: "pointer", fontSize: "0.88rem",
               }}
@@ -764,8 +782,8 @@ const Maintenance = () => {
               <div style={{
                 display: "flex", alignItems: "center", gap: "8px",
                 padding: "9px 14px", borderRadius: "9px",
-                background: "#f0fdf4", border: "1px solid #bbf7d0",
-                color: "#15803d", fontSize: "0.85rem", fontWeight: 600,
+                background: dark ? "#0f2820" : "#f0fdf4", border: `1px solid ${dark ? "#16532d" : "#bbf7d0"}`,
+                color: dark ? "#4ade80" : "#15803d", fontSize: "0.85rem", fontWeight: 600,
               }}>
                 <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#16a34a", display: "inline-block", animation: "pulse 1.5s infinite" }} />
                 Auto-refresh active
@@ -779,8 +797,8 @@ const Maintenance = () => {
               value={refreshInterval}
               onChange={e => { setRefreshInterval(Number(e.target.value)); setCountdown(Number(e.target.value)); }}
               style={{
-                padding: "9px 12px", borderRadius: "9px", border: "1px solid #d1d5db",
-                background: "#fff", fontSize: "0.88rem", color: "#374151", cursor: "pointer",
+                padding: "9px 12px", borderRadius: "9px", border: `1px solid ${dm.filterBorder}`,
+                background: dm.card, fontSize: "0.88rem", color: dm.textBody, cursor: "pointer",
               }}
             >
               {REFRESH_INTERVALS.map(s => (
@@ -820,8 +838,8 @@ const Maintenance = () => {
                 onClick={() => setStatusFilter(tab.key)}
                 style={{
                   padding: "7px 14px", borderRadius: "8px", border: "none",
-                  background: statusFilter === tab.key ? tab.color : "#f1f5f9",
-                  color: statusFilter === tab.key ? "#fff" : "#64748b",
+                  background: statusFilter === tab.key ? tab.color : dm.tabInactive,
+                  color: statusFilter === tab.key ? "#fff" : dm.tabText,
                   fontWeight: 700, cursor: "pointer", fontSize: "0.83rem",
                   transition: "all 0.2s",
                 }}
@@ -840,9 +858,9 @@ const Maintenance = () => {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{
-                  padding: "9px 12px 9px 32px", border: "1px solid #d1d5db",
+                  padding: "9px 12px 9px 32px", border: `1px solid ${dm.filterBorder}`,
                   borderRadius: "9px", fontSize: "0.88rem", width: "220px",
-                  background: "#f8fafc", outline: "none",
+                  background: dm.filterBg, outline: "none", color: dm.textBody,
                 }}
               />
             </div>
@@ -856,8 +874,8 @@ const Maintenance = () => {
 
       {/* TABLE */}
       <div style={{
-        background: "#fff", borderRadius: "16px", border: "1px solid #e2e8f0",
-        boxShadow: "0 2px 8px rgba(15,23,42,0.05)", overflow: "hidden",
+        background: dm.card, borderRadius: "16px", border: `1px solid ${dm.cardBorder}`,
+        boxShadow: dark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 8px rgba(15,23,42,0.05)", overflow: "hidden",
       }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.87rem" }}>
@@ -881,12 +899,12 @@ const Maintenance = () => {
 
                 return (
                   <tr key={r.request_id} style={{
-                    borderBottom: "1px solid #f1f5f9",
-                    background: i % 2 === 0 ? "#fff" : "#fafafa",
+                    borderBottom: `1px solid ${dm.rowBorder}`,
+                    background: i % 2 === 0 ? dm.rowEven : dm.rowOdd,
                     transition: "background 0.15s",
                   }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#f0f9ff"}
-                    onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? "#fff" : "#fafafa"}
+                    onMouseEnter={e => e.currentTarget.style.background = dm.rowHover}
+                    onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? dm.rowEven : dm.rowOdd}
                   >
                     <td style={{ padding: "12px 14px" }}>
                       <span style={{
@@ -901,13 +919,13 @@ const Maintenance = () => {
                     <td style={{ padding: "12px 14px", color: "#2563eb", fontWeight: 700, fontFamily: "monospace", whiteSpace: "nowrap" }}>
                       {srNum}
                     </td>
-                    <td style={{ padding: "12px 14px", color: "#64748b", whiteSpace: "nowrap" }}>
+                    <td style={{ padding: "12px 14px", color: dm.textMuted, whiteSpace: "nowrap" }}>
                       {r.request_date?.split("T")[0]}<br />
-                      <span style={{ fontSize: "0.78rem", color: "#94a3b8" }}>
+                      <span style={{ fontSize: "0.78rem", color: dm.textMuted }}>
                         {new Date(r.created_at || r.request_date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </span>
                     </td>
-                    <td style={{ padding: "12px 14px", fontWeight: 600, color: "#0f172a", maxWidth: "150px" }}>
+                    <td style={{ padding: "12px 14px", fontWeight: 600, color: dm.text, maxWidth: "150px" }}>
                       <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {r.asset_name || "Not Available"}
                       </div>
@@ -929,7 +947,8 @@ const Maintenance = () => {
                             onChange={e => setTechnicianDrafts({ ...technicianDrafts, [r.request_id]: e.target.value })}
                             style={{
                               width: "130px", padding: "6px 8px", borderRadius: "7px",
-                              border: "1px solid #d1d5db", fontSize: "0.78rem", color: "#334155",
+                              border: `1px solid ${dm.filterBorder}`, fontSize: "0.78rem",
+                              color: dm.textBody, background: dm.filterBg,
                             }}
                           >
                             <option value="">Technician</option>
@@ -942,31 +961,31 @@ const Maintenance = () => {
                             title="Assign work"
                             style={{
                               padding: "6px 8px", borderRadius: "7px", border: "none",
-                              background: "#eff6ff", color: "#2563eb", cursor: "pointer",
+                              background: dark ? "#1e3a5f" : "#eff6ff", color: "#2563eb", cursor: "pointer",
                             }}
                           >
                             {assigningId === r.request_id ? "..." : <FaUserCog />}
                           </button>
                         </div>
                       ) : (
-                        <span style={{ color: "#0f172a", fontWeight: 600 }}>
+                        <span style={{ color: dm.text, fontWeight: 600 }}>
                           {r.technician_name || "Unassigned"}
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: "12px 14px", color: "#64748b" }}>
+                    <td style={{ padding: "12px 14px", color: dm.textMuted }}>
                       {r.assigned_by_name || "-"}
                     </td>
-                    <td style={{ padding: "12px 14px", color: "#64748b" }}>
+                    <td style={{ padding: "12px 14px", color: dm.textMuted }}>
                       {r.checked_by_name || "-"}
                     </td>
-                    <td style={{ padding: "12px 14px", color: "#475569" }}>
+                    <td style={{ padding: "12px 14px", color: dm.textSub }}>
                       {r.request_type || "Facility Complaint"}
                     </td>
-                    <td style={{ padding: "12px 14px", color: "#0f172a", fontWeight: 500 }}>
+                    <td style={{ padding: "12px 14px", color: dm.text, fontWeight: 500 }}>
                       {r.reported_by_name}
                     </td>
-                    <td style={{ padding: "12px 14px", color: "#475569", maxWidth: "200px" }}>
+                    <td style={{ padding: "12px 14px", color: dm.textSub, maxWidth: "200px" }}>
                       <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.issue_description}>
                         {r.issue_description}
                       </div>
@@ -978,7 +997,7 @@ const Maintenance = () => {
                             onClick={() => handleInProgress(r.request_id)}
                             style={{
                               padding: "5px 10px", borderRadius: "7px", border: "none",
-                              background: "#eff6ff", color: "#2563eb",
+                              background: dark ? "#1e3a5f" : "#eff6ff", color: "#2563eb",
                               fontWeight: 700, cursor: "pointer", fontSize: "0.78rem",
                               whiteSpace: "nowrap",
                             }}
@@ -992,7 +1011,7 @@ const Maintenance = () => {
                             onClick={() => handleResolve(r.request_id)}
                             style={{
                               padding: "5px 10px", borderRadius: "7px", border: "none",
-                              background: "#f0fdf4", color: "#16a34a",
+                              background: dark ? "#0f2820" : "#f0fdf4", color: "#16a34a",
                               fontWeight: 700, cursor: "pointer", fontSize: "0.78rem",
                               whiteSpace: "nowrap",
                             }}
@@ -1013,7 +1032,7 @@ const Maintenance = () => {
                           title="Edit request"
                           style={{
                             padding: "5px 9px", borderRadius: "7px", border: "none",
-                            background: "#f8fafc", color: "#475569",
+                            background: dm.bg, color: dm.textSub,
                             fontWeight: 700, cursor: "pointer", fontSize: "0.78rem",
                             whiteSpace: "nowrap",
                           }}
@@ -1028,7 +1047,7 @@ const Maintenance = () => {
                           title="View edit history"
                           style={{
                             padding: "5px 9px", borderRadius: "7px", border: "none",
-                            background: "#fefce8", color: "#a16207",
+                            background: dark ? "#1c1200" : "#fefce8", color: "#a16207",
                             fontWeight: 700, cursor: "pointer", fontSize: "0.78rem",
                             whiteSpace: "nowrap",
                           }}
@@ -1043,7 +1062,7 @@ const Maintenance = () => {
                             title="Check and add resolution notes"
                             style={{
                               padding: "5px 9px", borderRadius: "7px", border: "none",
-                              background: "#ecfdf5", color: "#15803d",
+                              background: dark ? "#0f2820" : "#ecfdf5", color: "#15803d",
                               fontWeight: 700, cursor: "pointer", fontSize: "0.78rem",
                               whiteSpace: "nowrap",
                             }}
@@ -1057,7 +1076,7 @@ const Maintenance = () => {
                 );
               }) : (
                 <tr>
-                  <td colSpan="12" style={{ padding: "48px", textAlign: "center", color: "#94a3b8" }}>
+                  <td colSpan="12" style={{ padding: "48px", textAlign: "center", color: dm.textMuted }}>
                     <FaTools style={{ fontSize: "2rem", marginBottom: "12px", display: "block", margin: "0 auto 12px" }} />
                     No service requests found
                   </td>
