@@ -77,12 +77,6 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Footer — designer credit only, no sign out button */}
-      <div className="sidebar-footer">
-        <div className="designer-credit">
-          Designed by <span>KUNAL NARWAT</span>
-        </div>
-      </div>
     </div>
   );
 };

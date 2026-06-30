@@ -15,6 +15,7 @@ const maintenanceRequestSchema = new mongoose.Schema(
     location: { type: String, default: null },
     sublocation: { type: String, default: null },
     department: { type: String, default: null },
+    sr_number: { type: String, default: null },
     assigned_by: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     checked_by: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     last_edited_by: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },

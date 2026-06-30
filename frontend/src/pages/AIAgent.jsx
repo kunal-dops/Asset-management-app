@@ -294,7 +294,7 @@ export default function AIAgent() {
 
     if (activeRequests.length > 0) {
       const requestList = activeRequests
-        .map((request) => `SR-${String(87000 + request.request_id).padStart(5, "0")} - ${request.asset_name || "Asset"}: ${request.issue_description}`)
+        .map((request) => `${request.sr_number || `SR-${String(request.request_id).slice(-5).toUpperCase()}`} - ${request.asset_name || "Asset"}: ${request.issue_description}`)
         .join("\n");
 
       setMessages((current) => [
@@ -483,7 +483,7 @@ export default function AIAgent() {
   const askForRequestSolution = (request) => {
     const prompt = [
       `Solve this service request like an IT technician.`,
-      `Service request: SR-${String(87000 + request.request_id).padStart(5, "0")}`,
+      `Service request: ${request.sr_number || `SR-${String(request.request_id).slice(-5).toUpperCase()}`}`,
       `Status: ${request.status || "pending"}`,
       `Priority: ${request.priority || "normal"}`,
       `Asset: ${request.asset_name || "Unknown asset"} ${request.asset_tag ? `(${request.asset_tag})` : ""}`,
@@ -544,7 +544,7 @@ export default function AIAgent() {
 
   const resolveRequest = async (request) => {
     const resolution = lastDiagnosis?.nextAction || "Resolved with AI troubleshooting guidance.";
-    setActionState({ type: "loading", text: `Resolving SR-${String(87000 + request.request_id).padStart(5, "0")}...` });
+    setActionState({ type: "loading", text: `Resolving ${request.sr_number || `SR-${String(request.request_id).slice(-5).toUpperCase()}`}...` });
     try {
       await API.put(`/maintenance/${request.request_id}`, {
         status: "resolved",
@@ -718,7 +718,7 @@ export default function AIAgent() {
               {activeRequests.length > 0 ? activeRequests.map((request) => (
                 <div className="agent-request-row" key={request.request_id}>
                   <div>
-                    <strong>SR-{String(87000 + request.request_id).padStart(5, "0")}</strong>
+                    <strong>{request.sr_number || `SR-${String(request.request_id).slice(-5).toUpperCase()}`}</strong>
                     <p>{request.asset_name || "Asset"} - {request.issue_description}</p>
                   </div>
                   <div className="agent-request-actions">

@@ -96,7 +96,6 @@ const Assets = () => {
     try {
       const payload = {
         ...form,
-        category_id: form.category_id ? Number(form.category_id) : form.category_id,
         purchase_cost: form.purchase_cost === "" ? "" : Number(form.purchase_cost),
       };
       await API.post("/assets", payload);

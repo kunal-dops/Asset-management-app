@@ -128,6 +128,7 @@ const Maintenance = () => {
         location: form.location,
         sublocation: form.sublocation,
         department: form.department,
+        sr_number: form.sr_number,
       });
       setFlash({ type: "success", text: `Service request ${form.sr_number} created successfully!` });
       setShowForm(false);
@@ -223,7 +224,7 @@ const Maintenance = () => {
         ...editForm,
         checked_by: editForm.status === "resolved" ? storedUser.user_id || null : editingRequest.checked_by || null,
       });
-      setFlash({ type: "success", text: `Service request SR-${String(87000 + editingRequest.request_id).padStart(5, "0")} updated.` });
+      setFlash({ type: "success", text: `Service request ${editingRequest.sr_number || `SR-${String(editingRequest.request_id).slice(-5).toUpperCase()}`} updated.` });
       setEditingRequest(null);
       setEditForm(null);
       await fetchAll();
@@ -519,7 +520,7 @@ const Maintenance = () => {
                 Edit Service Request
               </h3>
               <p style={{ margin: "3px 0 0", color: "#dbeafe", fontSize: "0.82rem" }}>
-                SR-{String(87000 + editingRequest.request_id).padStart(5, "0")} - all edits are stored in history
+                {editingRequest.sr_number || `SR-${String(editingRequest.request_id).slice(-5).toUpperCase()}`} - all edits are stored in history
               </p>
             </div>
             <button
@@ -650,7 +651,7 @@ const Maintenance = () => {
             <div>
               <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800 }}>Edit History</h3>
               <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "0.86rem" }}>
-                SR-{String(87000 + auditRequest.request_id).padStart(5, "0")} - who edited, assigned, checked, or resolved the request
+                {auditRequest.sr_number || `SR-${String(auditRequest.request_id).slice(-5).toUpperCase()}`} - who edited, assigned, checked, or resolved the request
               </p>
             </div>
             <button type="button" className="delete-btn-pro" onClick={() => setAuditRequest(null)}>
@@ -866,7 +867,7 @@ const Maintenance = () => {
                 const statusCfg = STATUS_CONFIG[r.status] || STATUS_CONFIG.pending;
                 const priority = r.priority || "normal";
                 const priorityCfg = PRIORITY_CONFIG[priority] || PRIORITY_CONFIG.normal;
-                const srNum = `SR-${String(87000 + r.request_id).padStart(5, "0")}`;
+                const srNum = r.sr_number || `SR-${String(r.request_id).slice(-5).toUpperCase()}`;
 
                 return (
                   <tr key={r.request_id} style={{

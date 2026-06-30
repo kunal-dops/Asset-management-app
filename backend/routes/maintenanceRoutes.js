@@ -150,6 +150,7 @@ router.post("/", requireRole("admin", "technician", "user"), async (req, res) =>
     location,
     sublocation,
     department,
+    sr_number,
   } = req.body;
 
   if (actor.role === "user") {
@@ -174,6 +175,7 @@ router.post("/", requireRole("admin", "technician", "user"), async (req, res) =>
       location: normalizeEmpty(location),
       sublocation: normalizeEmpty(sublocation),
       department: normalizeEmpty(department),
+      sr_number: normalizeEmpty(sr_number),
       last_edited_by: actor.userId && actor.userId !== 0 ? actor.userId : null,
     });
 
